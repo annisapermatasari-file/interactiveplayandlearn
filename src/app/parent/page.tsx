@@ -69,9 +69,13 @@ export default async function ParentDashboardPage() {
         )}
       </section>
 
-      <p className="text-sm text-muted">
-        Modul pembelajaran akan tersedia pada fase berikutnya.
-      </p>
+      {activeChildId ? (
+        <Link href="/learn" className={buttonClasses({ className: "self-start" })}>
+          Buka Halaman Belajar
+        </Link>
+      ) : (
+        <p className="text-sm text-muted">Pilih salah satu profil anak di atas untuk mulai belajar.</p>
+      )}
 
       <form action={logout}>
         <Button type="submit" variant="ghost">

@@ -1,4 +1,6 @@
 import "server-only";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import type { UserRole } from "@/generated/prisma/client";
@@ -75,4 +77,31 @@ export async function requireChildAccess(userId: string, childId: string) {
   }
 
   throw new ForbiddenError("You do not have access to this child.");
+}
+
+/**
+ * Resolves the "active child" cookie set by setActiveChild (Phase 3),
+ * re-validating ownership on every call. A stale or forged cookie (e.g. left
+ * over after switching accounts) resolves to null rather than throwing —
+ * callers should treat null as "no child selected", not as an error.
+ */
+export async function getActiveChild(userId: string) {
+  const cookieStore = await cookies();
+  const activeChildId = cookieStore.get("activeChildId")?.value;
+  if (!activeChildId) return null;
+
+  try {
+    return await requireChildAccess(userId, activeChildId);
+  } catch (error) {
+    if (error instanceof ForbiddenError) return null;
+    throw error;
+  }
+}
+
+/** For pages that require both a signed-in user and a selected child (the /learn area). */
+export async function requireActiveChild() {
+  const user = await requireUser();
+  const child = await getActiveChild(user.id);
+  if (!child) redirect("/parent");
+  return { user, child };
 }
