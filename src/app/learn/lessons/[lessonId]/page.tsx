@@ -4,7 +4,7 @@ import { requireActiveChild } from "@/lib/permissions";
 import { getPublishedLessonById } from "@/lib/content";
 import { ActiveChildBanner } from "@/components/learning/ActiveChildBanner";
 import { ActivityPreviewItem } from "@/components/learning/ActivityPreviewItem";
-import { Card } from "@/components/ui/Card";
+import { buttonClasses } from "@/components/ui/Button";
 
 export default async function LessonPage({ params }: PageProps<"/learn/lessons/[lessonId]">) {
   const { lessonId } = await params;
@@ -31,9 +31,9 @@ export default async function LessonPage({ params }: PageProps<"/learn/lessons/[
         ))}
       </div>
 
-      <Card className="text-sm text-muted">
-        Aktivitas interaktif akan tersedia pada fase berikutnya.
-      </Card>
+      <Link href={`/learn/lessons/${lesson.id}/play`} className={buttonClasses({ size: "lg", className: "self-start" })}>
+        Mulai Belajar
+      </Link>
     </main>
   );
 }

@@ -71,3 +71,39 @@ export async function getEnrollment(childId: string, courseId: string) {
     where: { childId_courseId: { childId, courseId } },
   });
 }
+
+/**
+ * Question data for the interactive player. Still PUBLISHED-only at every
+ * level, and still never selects `correctAnswer` — the player only ever
+ * learns whether an answer was right via submitAnswer's response, after the
+ * child has already committed to it.
+ */
+export async function getLessonQuestionsForPlay(lessonId: string) {
+  return db.lesson.findFirst({
+    where: {
+      id: lessonId,
+      status: "PUBLISHED",
+      module: { status: "PUBLISHED", course: { status: "PUBLISHED" } },
+    },
+    include: {
+      activities: {
+        where: { status: "PUBLISHED" },
+        orderBy: { position: "asc" },
+        include: {
+          questions: {
+            where: { status: "PUBLISHED" },
+            orderBy: { position: "asc" },
+            select: {
+              id: true,
+              prompt: true,
+              imageUrl: true,
+              audioUrl: true,
+              options: true,
+              skill: true,
+            },
+          },
+        },
+      },
+    },
+  });
+}
