@@ -11,24 +11,39 @@ Full product requirements: `docs/PRD.md`.
 
 - Next.js (App Router) + TypeScript + React
 - Tailwind CSS
-- Prisma ORM + PostgreSQL (Neon in production) — added in Phase 1
+- Prisma ORM (7.x, `prisma-client` generator + `@prisma/adapter-pg`) + PostgreSQL (Neon in production)
 - Auth.js (NextAuth) — added in Phase 2
 
 ## Getting started
 
 ```bash
-npm install
+cp .env.example .env   # set DATABASE_URL to your Postgres instance (Neon in production)
+npm install             # also runs `prisma generate` via postinstall
+npm run db:migrate      # create/apply migrations
+npm run db:seed         # load demo org/users/course/content
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
+Demo accounts created by the seed (`prisma/seed.ts`, development only):
+
+| Role   | Email                     | Password       |
+|--------|---------------------------|----------------|
+| Admin  | admin@countinglms.dev     | ChangeMe123!   |
+| Parent | parent@countinglms.dev    | ChangeMe123!   |
+
 ## Scripts
 
 ```bash
-npm run dev     # start dev server
-npm run build   # production build
-npm run lint    # eslint
+npm run dev               # start dev server
+npm run build              # production build
+npm run lint                # eslint
+npm run db:generate         # regenerate the Prisma client
+npm run db:migrate          # create + apply a dev migration
+npm run db:migrate:deploy   # apply migrations (production/CI)
+npm run db:seed             # run prisma/seed.ts
+npm run db:studio           # Prisma Studio
 ```
 
 ## Project structure
@@ -38,9 +53,15 @@ src/
 ├── app/          # routes (App Router)
 ├── components/   # ui/, activities/, learning/, child/, parent/, teacher/, admin/
 ├── lib/          # domain logic (db, auth, permissions, scoring, progress, recommendations)
+├── generated/    # Prisma client output (git-ignored, regenerated via `prisma generate`)
 ├── server/
 │   └── actions/  # server actions (mutations)
 └── types/
+
+prisma/
+├── schema.prisma
+├── migrations/
+└── seed.ts
 ```
 
 Development proceeds in phases (Foundation → Database → Auth → Child

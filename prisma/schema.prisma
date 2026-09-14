@@ -1,0 +1,451 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum OrganizationType {
+  INDIVIDUAL
+  SCHOOL
+  TUTOR
+  LEARNING_CENTER
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  TEACHER
+  PARENT
+}
+
+enum AgeBand {
+  AGE_3_4
+  AGE_5_6
+  AGE_7_8
+  AGE_9_PLUS
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ActivityType {
+  COUNT_SELECT
+  COUNT_INPUT
+  MULTIPLE_CHOICE
+  DRAG_MATCH
+  TRACE_NUMBER
+  COUNT_CIRCLE
+  SAME_AMOUNT
+  NUMBER_RECOGNITION
+}
+
+enum Difficulty {
+  BEGINNER
+  EASY
+  MEDIUM
+  HARD
+}
+
+// Skills tracked for mastery. Kept as an enum for MVP; may become a
+// database-managed taxonomy in a later phase if content growth requires it.
+enum Skill {
+  COUNT_1_5
+  COUNT_1_10
+  COUNT_1_20
+  NUMBER_RECOGNITION_1_10
+  MATCH_QUANTITY
+  VISUAL_COUNTING
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+}
+
+enum LessonProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+// Identifies what a given XP transaction was earned for. sourceId scopes the
+// event (e.g. a questionId) so [childId, sourceType, sourceId] can be made
+// unique, which is what makes XP awarding idempotent under retries/replays.
+enum XPSourceType {
+  QUESTION_CORRECT
+  LESSON_COMPLETE
+  STREAK_BONUS
+  BADGE_BONUS
+}
+
+enum SubscriptionPlan {
+  FREE
+  PRO
+  SCHOOL
+  LEARNING_CENTER
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+}
+
+// ---------------------------------------------------------------------------
+// Platform / tenancy
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String?
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships    OrganizationMember[]
+  childrenAsParent Child[]            @relation("ChildParent")
+  classesAsTeacher Class[]            @relation("ClassTeacher")
+
+  @@map("users")
+}
+
+model Organization {
+  id        String           @id @default(cuid())
+  name      String
+  type      OrganizationType @default(INDIVIDUAL)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  members      OrganizationMember[]
+  children     Child[]
+  classes      Class[]
+  subscription Subscription?
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  role           UserRole
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@map("organization_members")
+}
+
+model Child {
+  id             String   @id @default(cuid())
+  organizationId String
+  parentUserId   String?
+  displayName    String
+  avatarUrl      String?
+  ageBand        AgeBand?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parent       User?        @relation("ChildParent", fields: [parentUserId], references: [id], onDelete: SetNull)
+
+  classMemberships ClassMember[]
+  enrollments      Enrollment[]
+  attempts         Attempt[]
+  lessonProgress   LessonProgress[]
+  skillMastery     SkillMastery[]
+  xpTransactions   XPTransaction[]
+  badges           ChildBadge[]
+
+  @@index([organizationId])
+  @@index([parentUserId])
+  @@map("children")
+}
+
+model Class {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  teacherUserId  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  teacher      User?        @relation("ClassTeacher", fields: [teacherUserId], references: [id], onDelete: SetNull)
+  members      ClassMember[]
+
+  @@index([organizationId])
+  @@map("classes")
+}
+
+model ClassMember {
+  id        String   @id @default(cuid())
+  classId   String
+  childId   String
+  createdAt DateTime @default(now())
+
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  child Child @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, childId])
+  @@index([childId])
+  @@map("class_members")
+}
+
+// ---------------------------------------------------------------------------
+// Content hierarchy: Course -> Module -> Lesson -> Activity -> Question
+// Content is platform-owned (global library) for the MVP; organization-scoped
+// content can be layered on later without a breaking schema change.
+// ---------------------------------------------------------------------------
+
+model Course {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  title       String
+  description String?
+  status      ContentStatus @default(DRAFT)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  modules     CourseModule[]
+  enrollments Enrollment[]
+
+  @@map("courses")
+}
+
+model CourseModule {
+  id        String        @id @default(cuid())
+  courseId  String
+  title     String
+  position  Int
+  status    ContentStatus @default(DRAFT)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  course  Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
+
+  @@unique([courseId, position])
+  @@map("course_modules")
+}
+
+model Lesson {
+  id          String        @id @default(cuid())
+  moduleId    String
+  title       String
+  description String?
+  position    Int
+  status      ContentStatus @default(DRAFT)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  module         CourseModule     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  activities     Activity[]
+  lessonProgress LessonProgress[]
+
+  @@unique([moduleId, position])
+  @@map("lessons")
+}
+
+model Activity {
+  id         String        @id @default(cuid())
+  lessonId   String
+  type       ActivityType
+  title      String
+  position   Int
+  difficulty Difficulty    @default(EASY)
+  status     ContentStatus @default(DRAFT)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  lesson    Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  questions Question[]
+
+  @@unique([lessonId, position])
+  @@map("activities")
+}
+
+model Question {
+  id         String        @id @default(cuid())
+  activityId String
+  skill      Skill
+  prompt     String
+  imageUrl   String?
+  audioUrl   String?
+  position   Int
+  // Answer options shown to the child, e.g. [{ id, label, imageUrl? }].
+  // Never includes which option is correct.
+  options    Json?
+  // Authoritative correct answer (option id, number, or match pairs
+  // depending on activity type). Loaded server-side only — must never be
+  // sent to the client.
+  correctAnswer Json
+  status     ContentStatus @default(DRAFT)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  activity Activity  @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  attempts Attempt[]
+
+  @@unique([activityId, position])
+  @@map("questions")
+}
+
+// ---------------------------------------------------------------------------
+// Learning data
+// ---------------------------------------------------------------------------
+
+model Enrollment {
+  id          String           @id @default(cuid())
+  childId     String
+  courseId    String
+  status      EnrollmentStatus @default(ACTIVE)
+  startedAt   DateTime         @default(now())
+  completedAt DateTime?
+
+  child  Child  @relation(fields: [childId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Restrict)
+
+  @@unique([childId, courseId])
+  @@map("enrollments")
+}
+
+// One row per answer submission. isCorrect and pointsAwarded are always
+// computed server-side (see src/lib/scoring.ts) — never trusted from the
+// client. Retries create additional rows; XP idempotency is enforced via
+// XPTransaction's unique constraint, not by limiting attempts here.
+model Attempt {
+  id            String   @id @default(cuid())
+  childId       String
+  questionId    String
+  activityId    String
+  lessonId      String
+  isCorrect     Boolean
+  pointsAwarded Int
+  responseData  Json
+  attemptedAt   DateTime @default(now())
+
+  child    Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Restrict)
+
+  @@index([childId, questionId])
+  @@index([childId, lessonId])
+  @@map("attempts")
+}
+
+model LessonProgress {
+  id              String               @id @default(cuid())
+  childId         String
+  lessonId        String
+  status          LessonProgressStatus @default(NOT_STARTED)
+  questionsTotal  Int                  @default(0)
+  questionsCorrect Int                 @default(0)
+  scorePercent    Int                  @default(0)
+  stars           Int                  @default(0)
+  startedAt       DateTime?
+  completedAt     DateTime?
+  updatedAt       DateTime             @updatedAt
+
+  child  Child  @relation(fields: [childId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Restrict)
+
+  @@unique([childId, lessonId])
+  @@map("lesson_progress")
+}
+
+model SkillMastery {
+  id               String   @id @default(cuid())
+  childId          String
+  skill            Skill
+  attemptsTotal    Int      @default(0)
+  attemptsCorrect  Int      @default(0)
+  masteryScore     Float    @default(0)
+  lastPracticedAt  DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  child Child @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@unique([childId, skill])
+  @@map("skill_mastery")
+}
+
+// ---------------------------------------------------------------------------
+// Gamification
+// ---------------------------------------------------------------------------
+
+model Badge {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?
+  iconUrl     String?
+  createdAt   DateTime @default(now())
+
+  childBadges ChildBadge[]
+
+  @@map("badges")
+}
+
+model ChildBadge {
+  id        String   @id @default(cuid())
+  childId   String
+  badgeId   String
+  awardedAt DateTime @default(now())
+
+  child Child @relation(fields: [childId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([childId, badgeId])
+  @@map("child_badges")
+}
+
+// The [childId, sourceType, sourceId] unique constraint is what guarantees
+// "XP cannot be duplicated through retries": awarding XP is an upsert-or-skip
+// against this key rather than an unconditional insert.
+model XPTransaction {
+  id         String       @id @default(cuid())
+  childId    String
+  amount     Int
+  sourceType XPSourceType
+  sourceId   String
+  createdAt  DateTime     @default(now())
+
+  child Child @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@unique([childId, sourceType, sourceId])
+  @@index([childId])
+  @@map("xp_transactions")
+}
+
+// ---------------------------------------------------------------------------
+// Billing (schema-ready for Phase 11; not used by application logic yet)
+// ---------------------------------------------------------------------------
+
+model Subscription {
+  id                 String              @id @default(cuid())
+  organizationId     String              @unique
+  plan               SubscriptionPlan    @default(FREE)
+  status             SubscriptionStatus  @default(ACTIVE)
+  currentPeriodEnd   DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
