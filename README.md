@@ -12,17 +12,21 @@ Full product requirements: `docs/PRD.md`.
 - Next.js (App Router) + TypeScript + React
 - Tailwind CSS
 - Prisma ORM (7.x, `prisma-client` generator + `@prisma/adapter-pg`) + PostgreSQL (Neon in production)
-- Auth.js (NextAuth) — added in Phase 2
+- Auth.js (NextAuth v5) — Credentials provider, JWT sessions, Node.js `proxy.ts` for route protection
 
 ## Getting started
 
 ```bash
-cp .env.example .env   # set DATABASE_URL to your Postgres instance (Neon in production)
+cp .env.example .env   # set DATABASE_URL and AUTH_SECRET (openssl rand -base64 32)
 npm install             # also runs `prisma generate` via postinstall
 npm run db:migrate      # create/apply migrations
 npm run db:seed         # load demo org/users/course/content
 npm run dev
 ```
+
+Visit `/register` to create a parent account, or `/login` with a seeded demo
+account below. `/parent` is protected — signed-out visitors are redirected to
+`/login`.
 
 Open [http://localhost:3000](http://localhost:3000).
 
@@ -50,12 +54,13 @@ npm run db:studio           # Prisma Studio
 
 ```
 src/
-├── app/          # routes (App Router)
-├── components/   # ui/, activities/, learning/, child/, parent/, teacher/, admin/
-├── lib/          # domain logic (db, auth, permissions, scoring, progress, recommendations)
+├── app/          # routes (App Router): /, /login, /register, /parent, /api/auth/[...nextauth]
+├── components/   # ui/, auth/, activities/, learning/, child/, parent/, teacher/, admin/
+├── lib/          # domain logic (db, auth, auth.config, permissions, scoring, progress, recommendations)
 ├── generated/    # Prisma client output (git-ignored, regenerated via `prisma generate`)
 ├── server/
 │   └── actions/  # server actions (mutations)
+├── proxy.ts      # route protection (Next.js 16's proxy convention, formerly "middleware")
 └── types/
 
 prisma/

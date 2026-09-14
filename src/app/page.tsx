@@ -1,12 +1,16 @@
-import { Button } from "@/components/ui/Button";
+import Link from "next/link";
+import { auth } from "@/lib/auth";
+import { buttonClasses } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const session = await auth();
+
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-10 px-6 py-16 text-center">
       <div className="flex flex-col items-center gap-4">
         <span className="rounded-full border border-border bg-surface px-4 py-1 text-sm text-muted">
-          Sedang dibangun · Fondasi platform
+          Sedang dibangun · Autentikasi &amp; profil orang tua
         </span>
         <h1 className="max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">
           Counting LMS
@@ -19,17 +23,26 @@ export default function HomePage() {
       </div>
 
       <div className="flex gap-3">
-        <Button size="lg">Masuk</Button>
-        <Button size="lg" variant="ghost">
-          Daftar
-        </Button>
+        {session?.user ? (
+          <Link href="/parent" className={buttonClasses({ size: "lg" })}>
+            Buka Dashboard
+          </Link>
+        ) : (
+          <>
+            <Link href="/login" className={buttonClasses({ size: "lg" })}>
+              Masuk
+            </Link>
+            <Link href="/register" className={buttonClasses({ size: "lg", variant: "ghost" })}>
+              Daftar
+            </Link>
+          </>
+        )}
       </div>
 
       <Card className="max-w-xl text-left">
         <p className="text-sm text-muted">
-          Fondasi aplikasi (Next.js, TypeScript, Tailwind) telah disiapkan.
-          Basis data, autentikasi, dan modul pembelajaran akan dibangun pada
-          fase-fase berikutnya.
+          Fondasi aplikasi, basis data, dan autentikasi telah disiapkan. Profil
+          anak dan modul pembelajaran akan dibangun pada fase-fase berikutnya.
         </p>
       </Card>
     </main>
