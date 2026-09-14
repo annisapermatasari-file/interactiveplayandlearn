@@ -6,7 +6,7 @@ import { ActivityRenderer } from "@/components/activities/ActivityRenderer";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { submitAnswer } from "@/server/actions/learning";
-import { calculateScorePercent, calculateStars, calculateXpForAnswer } from "@/lib/scoring";
+import { calculateScorePercent, calculateStars } from "@/lib/scoring";
 import type { ActivityAnswerState, ChildSafeQuestion } from "@/types/learning";
 
 export function LessonPlayer({
@@ -23,6 +23,11 @@ export function LessonPlayer({
   const [index, setIndex] = useState(0);
   const [answerState, setAnswerState] = useState<ActivityAnswerState>({ status: "unanswered" });
   const [results, setResults] = useState<boolean[]>([]);
+  // XP actually credited by the server this playthrough (0 if a question
+  // was already answered correctly before — XP only pays out once per
+  // question ever, see submitAnswer), and any badges newly awarded.
+  const [xpEarned, setXpEarned] = useState(0);
+  const [earnedBadges, setEarnedBadges] = useState<{ code: string; name: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -44,7 +49,6 @@ export function LessonPlayer({
     const correctCount = results.filter(Boolean).length;
     const scorePercent = calculateScorePercent(correctCount, results.length);
     const stars = calculateStars(scorePercent);
-    const xpEarned = results.reduce((sum, isCorrect) => sum + calculateXpForAnswer(isCorrect), 0);
 
     return (
       <Card className="flex flex-col items-center gap-4 py-10 text-center">
@@ -57,6 +61,14 @@ export function LessonPlayer({
           Skor percobaan ini: <strong>{scorePercent}%</strong> ({correctCount}/{results.length} benar)
         </p>
         <p className="text-muted">+{xpEarned} XP</p>
+        {earnedBadges.length > 0 ? (
+          <div className="flex flex-col items-center gap-1">
+            <p className="text-sm font-medium text-accent-foreground">Lencana baru!</p>
+            <p className="text-base">
+              {earnedBadges.map((badge) => `🏅 ${badge.name}`).join("  ")}
+            </p>
+          </div>
+        ) : null}
         <Link href={backHref} className={buttonClasses({ className: "mt-2" })}>
           Kembali ke Pelajaran
         </Link>
@@ -90,6 +102,10 @@ export function LessonPlayer({
         correctOptionId: result.correctOptionId,
       });
       setResults((prev) => [...prev, result.isCorrect]);
+      setXpEarned((prev) => prev + result.xpAwarded);
+      if (result.newBadges.length > 0) {
+        setEarnedBadges((prev) => [...prev, ...result.newBadges]);
+      }
     });
   }
 

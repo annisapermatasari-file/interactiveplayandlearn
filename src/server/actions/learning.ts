@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { getActiveChild } from "@/lib/permissions";
 import { calculateScorePercent, calculateStars, calculateXpForAnswer } from "@/lib/scoring";
+import { checkAndAwardBadges } from "@/lib/gamification";
 
 const submitAnswerSchema = z.object({
   lessonId: z.string().min(1),
@@ -13,7 +14,13 @@ const submitAnswerSchema = z.object({
 });
 
 export type SubmitAnswerResult =
-  | { ok: true; isCorrect: boolean; correctOptionId: string }
+  | {
+      ok: true;
+      isCorrect: boolean;
+      correctOptionId: string;
+      xpAwarded: number;
+      newBadges: { code: string; name: string }[];
+    }
   | { ok: false; error: string };
 
 /**
@@ -24,23 +31,26 @@ export type SubmitAnswerResult =
  * this function is the only source of truth for whether an answer is right,
  * and for what gets written to the child's learning record.
  *
- * Persists (Phase 6 — Learning Data):
- *  - Attempt: one row per submission, an honest log — replaying a lesson
- *    creates more Attempt rows on purpose.
- *  - LessonProgress: recomputed from *all* of this child's Attempts for the
- *    lesson (distinct questions ever answered / ever answered correctly),
- *    not incremented per call. That makes it safe against a duplicate
- *    network retry creating an extra Attempt row: recomputing from the
- *    same underlying set of distinct-correct questions yields the same
- *    result, so a duplicate attempt cannot inflate the score.
- *  - SkillMastery: rolling accuracy across every attempt for the question's
- *    skill (PRD §19: mastery = correctAttempts / totalAttempts) — this one
- *    is intentionally cumulative, since more practice attempts are exactly
- *    what should move it.
- *
- * XP is deliberately NOT awarded here — XPTransaction is a Gamification
- * (Phase 7) concern with its own idempotency constraint. Attempt.pointsAwarded
- * below just records what an attempt was worth, not a ledger credit.
+ * Persists, all in one transaction:
+ *  - Attempt (Phase 6): one row per submission, an honest log — replaying a
+ *    lesson creates more Attempt rows on purpose.
+ *  - LessonProgress (Phase 6): recomputed from *all* of this child's
+ *    Attempts for the lesson (distinct questions ever answered / ever
+ *    answered correctly), not incremented per call — safe against a
+ *    duplicate network retry creating an extra Attempt row.
+ *  - SkillMastery (Phase 6): rolling accuracy across every attempt for the
+ *    question's skill (PRD §19) — intentionally cumulative.
+ *  - XPTransaction (Phase 7): +10 XP on a correct answer, but only the
+ *    FIRST time this exact question is ever answered correctly by this
+ *    child. XPTransaction's unique [childId, sourceType, sourceId] index
+ *    (sourceId = questionId) enforces that — createMany+skipDuplicates
+ *    either inserts it or silently no-ops, so retries/replays can never
+ *    pay out twice for the same question. Attempt.pointsAwarded records
+ *    what THIS attempt was worth for the log; xpAwarded below is what was
+ *    actually, newly credited.
+ *  - ChildBadge (Phase 7): checkAndAwardBadges re-evaluates every badge
+ *    condition against the child's now-updated state and awards any newly
+ *    met ones, itself idempotent via ChildBadge's unique constraint.
  */
 export async function submitAnswer(input: unknown): Promise<SubmitAnswerResult> {
   const parsed = submitAnswerSchema.safeParse(input);
@@ -84,7 +94,7 @@ export async function submitAnswer(input: unknown): Promise<SubmitAnswerResult> 
     where: { status: "PUBLISHED", activity: { lessonId: parsed.data.lessonId, status: "PUBLISHED" } },
   });
 
-  await db.$transaction(async (tx) => {
+  const { xpAwarded, newBadges } = await db.$transaction(async (tx) => {
     await tx.attempt.create({
       data: {
         childId: child.id,
@@ -157,7 +167,27 @@ export async function submitAnswer(input: unknown): Promise<SubmitAnswerResult> 
         completedAt: isNowComplete ? new Date() : null,
       },
     });
+
+    let xpAwardedThisCall = 0;
+    if (isCorrect) {
+      const xpResult = await tx.xPTransaction.createMany({
+        data: [
+          {
+            childId: child.id,
+            amount: pointsAwarded,
+            sourceType: "QUESTION_CORRECT",
+            sourceId: question.id,
+          },
+        ],
+        skipDuplicates: true,
+      });
+      xpAwardedThisCall = xpResult.count > 0 ? pointsAwarded : 0;
+    }
+
+    const newlyAwardedBadges = await checkAndAwardBadges(child.id, tx);
+
+    return { xpAwarded: xpAwardedThisCall, newBadges: newlyAwardedBadges };
   });
 
-  return { ok: true, isCorrect, correctOptionId: correctAnswer.optionId };
+  return { ok: true, isCorrect, correctOptionId: correctAnswer.optionId, xpAwarded, newBadges };
 }
