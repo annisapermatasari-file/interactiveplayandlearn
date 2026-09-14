@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "@/lib/db";
-import type { ActivityType } from "@/generated/prisma/client";
+import type { ActivityType, Skill } from "@/generated/prisma/client";
 
 // Content-browsing queries only ever filter to PUBLISHED and never select
 // Question.correctAnswer — draft content and answer keys must never reach a
@@ -17,6 +17,15 @@ export const ACTIVITY_TYPE_LABELS: Record<ActivityType, string> = {
   COUNT_CIRCLE: "Hitung & Lingkari",
   SAME_AMOUNT: "Jumlah Sama",
   NUMBER_RECOGNITION: "Kenali Angka",
+};
+
+export const SKILL_LABELS: Record<Skill, string> = {
+  COUNT_1_5: "Berhitung 1–5",
+  COUNT_1_10: "Berhitung 1–10",
+  COUNT_1_20: "Berhitung 1–20",
+  NUMBER_RECOGNITION_1_10: "Mengenal Angka 1–10",
+  MATCH_QUANTITY: "Mencocokkan Jumlah",
+  VISUAL_COUNTING: "Berhitung Visual",
 };
 
 export async function listPublishedCourses() {

@@ -54,6 +54,9 @@ export default async function ParentDashboardPage() {
                 <div className="flex-1">
                   <ChildCard child={child} isActive={child.id === activeChildId} />
                 </div>
+                <Link href={`/parent/children/${child.id}/progress`} className="text-sm text-primary underline">
+                  Progres
+                </Link>
                 {child.id === activeChildId ? (
                   <span className="text-sm font-medium text-success">Aktif</span>
                 ) : (

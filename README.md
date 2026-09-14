@@ -54,7 +54,8 @@ npm run db:studio           # Prisma Studio
 
 ```
 src/
-├── app/          # routes (App Router): /, /login, /register, /parent, /parent/children[/[childId]],
+├── app/          # routes (App Router): /, /login, /register, /parent,
+│                 #   /parent/children[/[childId][/progress]],
 │                 #   /learn, /learn/courses/[courseId], /learn/lessons/[lessonId][/play],
 │                 #   /api/auth/[...nextauth]
 ├── components/   # ui/, auth/, child/, learning/, activities/, parent/, teacher/, admin/
