@@ -54,7 +54,7 @@ npm run db:studio           # Prisma Studio
 
 ```
 src/
-├── app/          # routes (App Router): /, /login, /register, /parent, /api/auth/[...nextauth]
+├── app/          # routes (App Router): /, /login, /register, /parent, /parent/children[/[childId]], /api/auth/[...nextauth]
 ├── components/   # ui/, auth/, activities/, learning/, child/, parent/, teacher/, admin/
 ├── lib/          # domain logic (db, auth, auth.config, permissions, scoring, progress, recommendations)
 ├── generated/    # Prisma client output (git-ignored, regenerated via `prisma generate`)

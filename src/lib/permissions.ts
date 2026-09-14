@@ -31,6 +31,19 @@ export async function getOrganizationMembership(userId: string, organizationId: 
   });
 }
 
+/**
+ * MVP assumption: each user belongs to exactly one organization (the one
+ * created for them at registration). Once a user can belong to multiple
+ * organizations (teachers, multi-org owners), callers should require an
+ * explicit organizationId instead of relying on this.
+ */
+export async function getPrimaryOrganizationMembership(userId: string) {
+  return db.organizationMember.findFirst({
+    where: { userId },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
 export async function requireOrganizationRole(
   userId: string,
   organizationId: string,
@@ -51,10 +64,7 @@ export async function requireOrganizationRole(
  * family's child by guessing/passing a different childId.
  */
 export async function requireChildAccess(userId: string, childId: string) {
-  const child = await db.child.findUnique({
-    where: { id: childId },
-    select: { id: true, organizationId: true, parentUserId: true },
-  });
+  const child = await db.child.findUnique({ where: { id: childId } });
   if (!child) throw new ForbiddenError("Child not found.");
 
   if (child.parentUserId === userId) return child;
