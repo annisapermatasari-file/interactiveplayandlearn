@@ -23,4 +23,6 @@ export type ActivityComponentProps = {
   question: ChildSafeQuestion;
   answerState: ActivityAnswerState;
   onSelect: (optionId: string) => void;
+  /** True while a submission is in flight — locks options even though answerState hasn't updated yet. */
+  disabled?: boolean;
 };

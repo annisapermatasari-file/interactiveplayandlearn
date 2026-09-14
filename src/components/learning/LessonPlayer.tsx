@@ -37,12 +37,13 @@ export function LessonPlayer({
   const isFinished = index >= questions.length;
 
   if (isFinished) {
+    // This playthrough's own results — good for the immediate "how did I
+    // just do" summary. The saved LessonProgress (shown on the lesson intro
+    // page) is computed server-side from the child's full attempt history
+    // across every playthrough, and is the authoritative record.
     const correctCount = results.filter(Boolean).length;
     const scorePercent = calculateScorePercent(correctCount, results.length);
     const stars = calculateStars(scorePercent);
-    // Transient session summary only — nothing here is persisted yet.
-    // Phase 6 writes the authoritative Attempt/LessonProgress/XP rows using
-    // these same scoring functions.
     const xpEarned = results.reduce((sum, isCorrect) => sum + calculateXpForAnswer(isCorrect), 0);
 
     return (
@@ -53,7 +54,7 @@ export function LessonPlayer({
           {"☆".repeat(3 - stars)}
         </p>
         <p className="text-lg">
-          Skor: <strong>{scorePercent}%</strong> ({correctCount}/{results.length} benar)
+          Skor percobaan ini: <strong>{scorePercent}%</strong> ({correctCount}/{results.length} benar)
         </p>
         <p className="text-muted">+{xpEarned} XP</p>
         <Link href={backHref} className={buttonClasses({ className: "mt-2" })}>
@@ -66,7 +67,11 @@ export function LessonPlayer({
   const currentQuestion = questions[index];
 
   function handleSelect(optionId: string) {
-    if (answerState.status !== "unanswered") return;
+    // Both checks matter: answerState guards against re-clicking after a
+    // result comes back, isPending guards the window while a submission is
+    // still in flight (answerState hasn't changed yet) — without it, a fast
+    // double-click could fire two submitAnswer calls for the same question.
+    if (answerState.status !== "unanswered" || isPending) return;
     setError(null);
     startTransition(async () => {
       const result = await submitAnswer({
@@ -109,7 +114,12 @@ export function LessonPlayer({
       </div>
 
       <Card>
-        <ActivityRenderer question={currentQuestion} answerState={answerState} onSelect={handleSelect} />
+        <ActivityRenderer
+          question={currentQuestion}
+          answerState={answerState}
+          onSelect={handleSelect}
+          disabled={isPending}
+        />
       </Card>
 
       {error ? <p className="text-center text-sm text-danger">{error}</p> : null}
