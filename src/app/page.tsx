@@ -3,6 +3,17 @@ import { auth } from "@/lib/auth";
 import { buttonClasses } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ACTIVITY_TYPE_LABELS, SKILL_LABELS } from "@/lib/labels";
+import { cn } from "@/lib/utils";
+
+// Rotates through all four palette hues — primary + the three --topic-*
+// accents — so repeated lists (steps, feature cards) read as colorful
+// without introducing more hues than DESIGN.md's palette defines.
+const ACCENT_ROTATION = [
+  { bg: "bg-primary", tint: "bg-primary/10", text: "text-primary" },
+  { bg: "bg-topic", tint: "bg-topic/10", text: "text-topic" },
+  { bg: "bg-topic-2", tint: "bg-topic-2/10", text: "text-topic-2" },
+  { bg: "bg-topic-3", tint: "bg-topic-3/10", text: "text-topic-3" },
+] as const;
 
 const HOW_IT_WORKS = [
   {
@@ -81,19 +92,35 @@ export default async function HomePage() {
 
       <main className="flex flex-1 flex-col">
         {/* Hero */}
-        <section className="flex flex-col items-center gap-6 px-6 py-20 text-center sm:py-28">
-          <span className="rounded-full border border-border bg-surface px-4 py-1 text-sm text-muted">
+        <section className="relative flex flex-col items-center gap-6 overflow-hidden px-6 py-20 text-center sm:py-28">
+          {/* Decorative only — aria-hidden, frozen under reduced-motion (globals.css .blob) */}
+          <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+            <span className="blob absolute -left-16 top-4 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
+            <span
+              className="blob absolute right-0 top-24 h-72 w-72 rounded-full bg-topic-3/20 blur-3xl"
+              style={{ animationDelay: "2s" }}
+            />
+            <span
+              className="blob absolute bottom-0 left-1/3 h-56 w-56 rounded-full bg-topic-2/20 blur-3xl"
+              style={{ animationDelay: "4s" }}
+            />
+          </div>
+
+          <span className="reveal rounded-full border border-border bg-surface px-4 py-1 text-sm text-muted">
             Untuk anak usia dini · Berhitung & mengenal angka
           </span>
-          <h1 className="text-display max-w-2xl text-4xl font-semibold sm:text-6xl">
+          <h1
+            className="reveal text-display max-w-2xl text-4xl font-semibold sm:text-6xl"
+            style={{ animationDelay: "80ms" }}
+          >
             Belajar berhitung yang terasa seperti bermain
           </h1>
-          <p className="max-w-xl text-lg text-muted">
+          <p className="reveal max-w-xl text-lg text-muted" style={{ animationDelay: "160ms" }}>
             Platform belajar berhitung interaktif untuk anak usia dini — soal
             bergambar, skor dan XP yang tervalidasi server, serta progres yang
             bisa dipantau orang tua dan guru secara real time.
           </p>
-          <div className="flex flex-wrap justify-center gap-3">
+          <div className="reveal flex flex-wrap justify-center gap-3" style={{ animationDelay: "240ms" }}>
             {session?.user ? (
               <Link href="/parent" className={buttonClasses({ size: "lg" })}>
                 Buka Dashboard
@@ -123,7 +150,7 @@ export default async function HomePage() {
 
           <div className="grid gap-6 sm:grid-cols-2">
             {/* Activity mock */}
-            <Card className="flex flex-col gap-4">
+            <Card className="reveal flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
                   {ACTIVITY_TYPE_LABELS.COUNT_SELECT}
@@ -132,18 +159,22 @@ export default async function HomePage() {
               </div>
 
               <p className="text-lg font-medium">Berapa banyak apel di bawah ini?</p>
-              <p aria-hidden className="text-4xl leading-none tracking-widest">
-                🍎🍎🍎🍎
+              <p aria-hidden className="flex justify-center gap-1 text-4xl leading-none">
+                {[0, 1, 2, 3].map((i) => (
+                  <span key={i} className="reveal" style={{ animationDelay: `${300 + i * 80}ms` }}>
+                    🍎
+                  </span>
+                ))}
               </p>
 
               <div className="grid grid-cols-3 gap-3" aria-hidden>
-                <div className="rounded-xl border border-border bg-background py-3 text-center font-medium text-muted transition-transform duration-150 ease-[var(--spring-out)] hover:scale-[1.03]">
+                <div className="hover-scale rounded-xl border border-border bg-background py-3 text-center font-medium text-muted transition-transform duration-150 ease-[var(--spring-out)]">
                   3
                 </div>
-                <div className="rounded-xl border-2 border-success bg-success/10 py-3 text-center font-semibold text-success transition-transform duration-150 ease-[var(--spring-press)] hover:scale-[1.03]">
+                <div className="hover-scale rounded-xl border-2 border-success bg-success/10 py-3 text-center font-semibold text-success transition-transform duration-150 ease-[var(--spring-press)]">
                   4
                 </div>
-                <div className="rounded-xl border border-border bg-background py-3 text-center font-medium text-muted transition-transform duration-150 ease-[var(--spring-out)] hover:scale-[1.03]">
+                <div className="hover-scale rounded-xl border border-border bg-background py-3 text-center font-medium text-muted transition-transform duration-150 ease-[var(--spring-out)]">
                   5
                 </div>
               </div>
@@ -151,7 +182,7 @@ export default async function HomePage() {
             </Card>
 
             {/* Progress mock */}
-            <Card className="flex flex-col gap-4">
+            <Card className="reveal flex flex-col gap-4" style={{ animationDelay: "120ms" }}>
               <div className="flex items-center justify-between">
                 <p className="font-medium">Progres Rara</p>
                 <span className="rounded-full bg-accent/20 px-3 py-1 text-xs font-medium text-accent-foreground">
@@ -165,20 +196,23 @@ export default async function HomePage() {
                   { label: SKILL_LABELS.NUMBER_RECOGNITION_1_10, value: 55 },
                   { label: SKILL_LABELS.MATCH_QUANTITY, value: 30 },
                 ] as const
-              ).map((row) => (
-                <div key={row.label} className="flex flex-col gap-1" aria-hidden>
-                  <div className="flex justify-between text-sm">
-                    <span>{row.label}</span>
-                    <span className="text-muted">{row.value}%</span>
+              ).map((row, i) => {
+                const accent = ACCENT_ROTATION[i % ACCENT_ROTATION.length];
+                return (
+                  <div key={row.label} className="flex flex-col gap-1" aria-hidden>
+                    <div className="flex justify-between text-sm">
+                      <span>{row.label}</span>
+                      <span className="text-muted">{row.value}%</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-border">
+                      <div
+                        className={cn("bar-fill h-full rounded-full", accent.bg)}
+                        style={{ width: `${row.value}%`, animationDelay: `${300 + i * 120}ms` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-border">
-                    <div
-                      className="h-full rounded-full bg-primary"
-                      style={{ width: `${row.value}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
               <p className="text-sm text-muted">
                 Data ini dihitung ulang dari riwayat pengerjaan anak, bukan
                 sekadar counter yang bisa meleset saat submit ganda.
@@ -191,30 +225,47 @@ export default async function HomePage() {
         <section className="mx-auto w-full max-w-5xl px-6 py-12">
           <h2 className="text-center text-2xl font-semibold sm:text-3xl">Cara pakai</h2>
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {HOW_IT_WORKS.map((item) => (
-              <div key={item.step} className="flex flex-col gap-2">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-                  {item.step}
-                </span>
-                <p className="font-medium">{item.title}</p>
-                <p className="text-sm text-muted">{item.body}</p>
-              </div>
-            ))}
+            {HOW_IT_WORKS.map((item, i) => {
+              const accent = ACCENT_ROTATION[i % ACCENT_ROTATION.length];
+              return (
+                <div
+                  key={item.step}
+                  className="reveal flex flex-col gap-2"
+                  style={{ animationDelay: `${i * 60}ms` }}
+                >
+                  <span
+                    className={cn(
+                      "flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-primary-foreground",
+                      accent.bg,
+                    )}
+                  >
+                    {item.step}
+                  </span>
+                  <p className="font-medium">{item.title}</p>
+                  <p className="text-sm text-muted">{item.body}</p>
+                </div>
+              );
+            })}
           </div>
         </section>
 
         {/* Features */}
         <section className="mx-auto w-full max-w-5xl px-6 py-12">
           <div className="grid gap-4 sm:grid-cols-2">
-            {FEATURES.map((feature) => (
-              <Card
-                key={feature.title}
-                className="transition-transform duration-200 ease-[var(--spring-out)] hover:-translate-y-0.5"
-              >
-                <p className="font-medium">{feature.title}</p>
-                <p className="mt-1 text-sm text-muted">{feature.body}</p>
-              </Card>
-            ))}
+            {FEATURES.map((feature, i) => {
+              const accent = ACCENT_ROTATION[i % ACCENT_ROTATION.length];
+              return (
+                <Card
+                  key={feature.title}
+                  className="reveal hover-lift relative overflow-hidden transition-transform duration-200 ease-[var(--spring-out)]"
+                  style={{ animationDelay: `${i * 60}ms` }}
+                >
+                  <span aria-hidden className={cn("absolute inset-y-0 left-0 w-1", accent.bg)} />
+                  <p className="font-medium">{feature.title}</p>
+                  <p className="mt-1 text-sm text-muted">{feature.body}</p>
+                </Card>
+              );
+            })}
           </div>
         </section>
 

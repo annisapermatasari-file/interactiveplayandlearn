@@ -125,12 +125,13 @@ export function LessonPlayer({
       </div>
       <div className="h-3 w-full overflow-hidden rounded-full bg-border">
         <div
-          className="h-full rounded-full bg-primary transition-all"
+          className="h-full rounded-full bg-primary transition-[width] duration-500 ease-[var(--ease-in-out)]"
           style={{ width: `${(index / questions.length) * 100}%` }}
         />
       </div>
 
-      <Card className="rounded-3xl">
+      {/* Keyed by question so the option grid's .reveal entrance replays per question. */}
+      <Card key={currentQuestion.id} className="rounded-3xl">
         <ActivityRenderer
           question={currentQuestion}
           answerState={answerState}

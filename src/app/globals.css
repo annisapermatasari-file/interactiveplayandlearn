@@ -12,16 +12,21 @@
 
   --accent: #f59e0b;
   --accent-foreground: #1c1917;
-  --topic: #7c3aed;
+  --topic: #7c3aed;         /* violet — course/topic tag #2 */
   --topic-foreground: #ffffff;
+  --topic-2: #0d9488;       /* teal — course/topic tag #3 */
+  --topic-2-foreground: #ffffff;
+  --topic-3: #db2777;       /* pink — course/topic tag #4 */
+  --topic-3-foreground: #ffffff;
 
   --success: #16a34a;
   --danger: #dc2626;
 
   --muted: #78716c;
 
-  --spring-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --spring-press: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --spring-out: cubic-bezier(0.16, 1, 0.3, 1);      /* strong ease-out — entrances, press release */
+  --spring-press: cubic-bezier(0.34, 1.56, 0.64, 1); /* momentum-only — celebrations, flicked feedback */
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);    /* on-screen movement — progress fills, blobs */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -39,6 +44,10 @@
     --accent-foreground: #0b0a09;
     --topic: #a78bfa;
     --topic-foreground: #0b0a09;
+    --topic-2: #2dd4bf;
+    --topic-2-foreground: #0b0a09;
+    --topic-3: #f472b6;
+    --topic-3-foreground: #0b0a09;
 
     --success: #4ade80;
     --danger: #f87171;
@@ -65,6 +74,10 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-topic: var(--topic);
   --color-topic-foreground: var(--topic-foreground);
+  --color-topic-2: var(--topic-2);
+  --color-topic-2-foreground: var(--topic-2-foreground);
+  --color-topic-3: var(--topic-3);
+  --color-topic-3-foreground: var(--topic-3-foreground);
   --color-success: var(--success);
   --color-danger: var(--danger);
   --color-muted: var(--muted);
@@ -117,9 +130,57 @@ h2, h3 {
 .celebrate { animation: pop-in 320ms var(--spring-press); }
 .shake { animation: gentle-shake 240ms ease-in-out; }
 
+/* Entrance for marketing/first-load content only — never on frequently
+   re-rendered UI. Stagger via inline `animationDelay`, not more keyframes. */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.reveal {
+  opacity: 0;
+  animation: fade-up 500ms var(--spring-out) forwards;
+}
+
+/* Slow decorative drift for hero backgrounds — purely ornamental, frozen
+   under reduced motion rather than given a gentler variant (§7: nothing
+   here aids comprehension, so removing it entirely is correct). */
+@keyframes float-blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(3%, -4%) scale(1.06); }
+}
+.blob {
+  animation: float-blob 9s var(--ease-in-out) infinite;
+}
+
+/* Progress-bar fill: scaleX instead of animating width, so it stays on the
+   compositor. transform-origin left keeps growth reading left-to-right. */
+@keyframes bar-fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.bar-fill {
+  transform-origin: left;
+  animation: bar-fill 700ms var(--ease-in-out) both;
+}
+
+/* Hover motion gated to real pointers — a tap on tablet/touch must not
+   trigger a hover transform (PRD's play tier runs on tablets first). */
+@media (hover: hover) and (pointer: fine) {
+  .hover-scale:hover { transform: scale(1.03); }
+  .hover-lift:hover { transform: translateY(-4px); }
+}
+
+@keyframes fade-only {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .celebrate, .shake {
+  .celebrate, .shake, .blob, .bar-fill {
     animation: none !important;
+  }
+  .reveal {
+    animation: fade-only 200ms ease forwards;
   }
 }
 

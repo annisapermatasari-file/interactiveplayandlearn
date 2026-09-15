@@ -3,9 +3,9 @@ import { Card } from "@/components/ui/Card";
 import { buttonClasses } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
-// Two-hue rotation only (primary/topic) — DESIGN.md caps the play tier at
-// one extra accent hue beyond the shared palette.
-const TOPIC_DOT_STYLES = ["bg-primary", "bg-topic"] as const;
+// Rotates through all four palette hues (primary + the three --topic-*
+// accents) so a course list reads as colorful without inventing new hues.
+const TOPIC_DOT_STYLES = ["bg-primary", "bg-topic", "bg-topic-2", "bg-topic-3"] as const;
 
 export function CourseCard({
   course,
@@ -19,7 +19,10 @@ export function CourseCard({
   const dotColor = TOPIC_DOT_STYLES[index % TOPIC_DOT_STYLES.length];
 
   return (
-    <Card className="flex flex-col gap-3 rounded-3xl">
+    <Card
+      className="reveal hover-lift flex flex-col gap-3 rounded-3xl transition-transform duration-200 ease-[var(--spring-out)]"
+      style={{ animationDelay: `${index * 60}ms` }}
+    >
       <div className="flex items-center gap-3">
         <span aria-hidden className={cn("h-3 w-3 shrink-0 rounded-full", dotColor)} />
         <h3 className="text-lg font-semibold">{course.title}</h3>

@@ -3,6 +3,11 @@
 import { cn } from "@/lib/utils";
 import type { ActivityComponentProps, ChildSafeOption } from "@/types/learning";
 
+// Purely decorative rotation, unanswered state only — swapped for the ✓/✗
+// badge the moment an answer is revealed, so it never competes with the
+// correctness signal (PRD §33: no interaction may depend on color alone).
+const ACCENT_BAR_STYLES = ["bg-primary", "bg-topic", "bg-topic-2", "bg-topic-3"] as const;
+
 /**
  * Shared "pick one of N labeled options" renderer. COUNT_SELECT,
  * MULTIPLE_CHOICE, and NUMBER_RECOGNITION all share this exact data shape
@@ -21,7 +26,7 @@ export function OptionChoiceActivity({ question, answerState, onSelect, disabled
         {question.prompt}
       </p>
       <div className="grid w-full grid-cols-2 gap-4 sm:grid-cols-4">
-        {options.map((option) => {
+        {options.map((option, i) => {
           const isRevealedCorrect = answered && option.id === answerState.correctOptionId;
           const isWrongSelection =
             answered && option.id === answerState.selectedOptionId && !answerState.isCorrect;
@@ -33,17 +38,24 @@ export function OptionChoiceActivity({ question, answerState, onSelect, disabled
               disabled={locked}
               aria-label={option.label}
               onClick={() => onSelect(option.id)}
+              style={{ animationDelay: `${i * 60}ms` }}
               className={cn(
-                "relative flex h-28 items-center justify-center rounded-3xl border-2 text-2xl font-semibold",
+                "reveal relative flex h-28 items-center justify-center overflow-hidden rounded-3xl border-2 text-2xl font-semibold",
                 "transition-[transform,background-color,border-color] duration-150 ease-[var(--spring-out)]",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                !locked && "border-border bg-surface hover:scale-[1.03] hover:border-primary/50 active:scale-[0.96] active:duration-75",
+                !locked && "hover-scale border-border bg-surface hover:border-primary/50 active:scale-[0.96] active:duration-75",
                 locked && !answered && "border-border bg-surface opacity-70",
                 answered && !isRevealedCorrect && !isWrongSelection && "border-border bg-surface opacity-40",
                 isRevealedCorrect && "celebrate border-success bg-success/10",
                 isWrongSelection && "shake border-danger bg-danger/10",
               )}
             >
+              {!locked ? (
+                <span
+                  aria-hidden
+                  className={cn("absolute inset-x-0 top-0 h-1.5", ACCENT_BAR_STYLES[i % ACCENT_BAR_STYLES.length])}
+                />
+              ) : null}
               {option.label}
               {isRevealedCorrect ? (
                 <span
