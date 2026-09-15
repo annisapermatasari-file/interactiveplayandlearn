@@ -44,6 +44,14 @@ const FEATURES = [
     title: "Untuk keluarga & kelas",
     body: "Satu anak, banyak anak, atau satu kelas penuh murid — arsitektur yang sama melayani orang tua dan guru.",
   },
+  {
+    title: "Dirancang untuk usia 4–6 tahun",
+    body: "Soal bergambar, jawaban singkat, tombol besar — anak yang belum lancar membaca tetap bisa mengerjakan sendiri.",
+  },
+  {
+    title: "Tanpa iklan, privasi diutamakan",
+    body: "Tidak ada iklan pihak ketiga yang menargetkan anak, dan data anak hanya bisa diakses oleh orang tua atau guru yang berwenang.",
+  },
 ] as const;
 
 export default async function HomePage() {

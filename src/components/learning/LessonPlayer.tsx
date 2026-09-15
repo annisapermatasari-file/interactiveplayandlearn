@@ -7,6 +7,7 @@ import { Button, buttonClasses } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { submitAnswer } from "@/server/actions/learning";
 import { calculateScorePercent, calculateStars } from "@/lib/scoring";
+import { cn } from "@/lib/utils";
 import type { ActivityAnswerState, ChildSafeQuestion } from "@/types/learning";
 
 export function LessonPlayer({
@@ -51,9 +52,9 @@ export function LessonPlayer({
     const stars = calculateStars(scorePercent);
 
     return (
-      <Card className="flex flex-col items-center gap-4 py-10 text-center">
+      <Card className="flex flex-col items-center gap-4 rounded-3xl py-10 text-center">
         <h2 className="text-2xl font-semibold">Pelajaran Selesai! 🎉</h2>
-        <p className="text-4xl" aria-label={`${stars} dari 3 bintang`}>
+        <p className="celebrate text-5xl" aria-label={`${stars} dari 3 bintang`}>
           {"⭐".repeat(stars)}
           {"☆".repeat(3 - stars)}
         </p>
@@ -122,14 +123,14 @@ export function LessonPlayer({
           Soal {index + 1} dari {questions.length}
         </span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-border">
+      <div className="h-3 w-full overflow-hidden rounded-full bg-border">
         <div
           className="h-full rounded-full bg-primary transition-all"
           style={{ width: `${(index / questions.length) * 100}%` }}
         />
       </div>
 
-      <Card>
+      <Card className="rounded-3xl">
         <ActivityRenderer
           question={currentQuestion}
           answerState={answerState}
@@ -143,9 +144,10 @@ export function LessonPlayer({
       {answerState.status === "answered" ? (
         <div className="flex flex-col items-center gap-3">
           <p
-            className={
-              answerState.isCorrect ? "text-lg font-medium text-success" : "text-lg font-medium text-danger"
-            }
+            className={cn(
+              "text-xl font-semibold",
+              answerState.isCorrect ? "celebrate text-success" : "text-danger",
+            )}
           >
             {answerState.isCorrect ? "Benar! 🎉" : "Belum tepat, lihat jawaban yang benar."}
           </p>

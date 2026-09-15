@@ -34,16 +34,33 @@ export function OptionChoiceActivity({ question, answerState, onSelect, disabled
               aria-label={option.label}
               onClick={() => onSelect(option.id)}
               className={cn(
-                "flex h-24 items-center justify-center rounded-2xl border-2 text-2xl font-semibold transition-colors",
+                "relative flex h-28 items-center justify-center rounded-3xl border-2 text-2xl font-semibold",
+                "transition-[transform,background-color,border-color] duration-150 ease-[var(--spring-out)]",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                !locked && "border-border bg-surface hover:border-primary/50",
+                !locked && "border-border bg-surface hover:scale-[1.03] hover:border-primary/50 active:scale-[0.96] active:duration-75",
                 locked && !answered && "border-border bg-surface opacity-70",
                 answered && !isRevealedCorrect && !isWrongSelection && "border-border bg-surface opacity-40",
-                isRevealedCorrect && "border-success bg-success/10",
-                isWrongSelection && "border-danger bg-danger/10",
+                isRevealedCorrect && "celebrate border-success bg-success/10",
+                isWrongSelection && "shake border-danger bg-danger/10",
               )}
             >
               {option.label}
+              {isRevealedCorrect ? (
+                <span
+                  aria-hidden
+                  className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full bg-success text-base text-white"
+                >
+                  ✓
+                </span>
+              ) : null}
+              {isWrongSelection ? (
+                <span
+                  aria-hidden
+                  className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full bg-danger text-base text-white"
+                >
+                  ✗
+                </span>
+              ) : null}
             </button>
           );
         })}

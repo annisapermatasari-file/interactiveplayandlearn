@@ -16,7 +16,7 @@ export default async function LearnPage() {
       <ActiveChildBanner child={child} />
 
       <div>
-        <h1 className="text-2xl font-semibold">Belajar</h1>
+        <h1 className="text-2xl font-semibold">Ayo Belajar! 🎈</h1>
         <p className="mt-1 text-sm text-muted">Pilih kursus untuk memulai.</p>
       </div>
 
@@ -25,7 +25,12 @@ export default async function LearnPage() {
       ) : (
         <div className="flex flex-col gap-4">
           {courses.map((course, index) => (
-            <CourseCard key={course.id} course={course} isEnrolled={Boolean(enrollments[index])} />
+            <CourseCard
+              key={course.id}
+              course={course}
+              isEnrolled={Boolean(enrollments[index])}
+              index={index}
+            />
           ))}
         </div>
       )}
