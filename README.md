@@ -57,9 +57,10 @@ src/
 ├── app/          # routes (App Router): /, /login, /register, /parent,
 │                 #   /parent/children[/[childId][/progress]],
 │                 #   /learn, /learn/courses/[courseId], /learn/lessons/[lessonId][/play],
+│                 #   /admin, /admin/courses/[courseId][/lessons/[lessonId]], /admin/questions/[questionId],
 │                 #   /api/auth/[...nextauth]
-├── components/   # ui/, auth/, child/, learning/, activities/, parent/, teacher/, admin/
-├── lib/          # domain logic (db, auth, auth.config, permissions, content, scoring, progress, recommendations)
+├── components/   # ui/, auth/, child/, learning/, activities/, admin/, parent/, teacher/
+├── lib/          # domain logic (db, auth, auth.config, permissions, content, labels, admin, scoring, progress, recommendations)
 ├── generated/    # Prisma client output (git-ignored, regenerated via `prisma generate`)
 ├── server/
 │   └── actions/  # server actions (mutations)

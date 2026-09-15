@@ -59,6 +59,26 @@ export async function requireOrganizationRole(
 }
 
 /**
+ * Global content-admin check. Course/Module/Lesson/Activity/Question are
+ * platform-wide content (no organizationId), so "who can manage content"
+ * isn't an org-membership question the way child access is. There is no
+ * platform-level SUPER_ADMIN concept yet (PRD marks it "future"), so this
+ * is a deliberate MVP stand-in: true only for a user holding an ADMIN
+ * membership somewhere. This is safe against privilege escalation because
+ * self-registration (src/server/actions/auth.ts) always grants OWNER, never
+ * ADMIN — a user can only ever reach ADMIN by being granted it directly
+ * (e.g. via the seed data), not by registering an account. Replace with a
+ * real platform-admin flag if/when multi-org admin scoping is needed.
+ */
+export async function requireGlobalAdmin(userId: string) {
+  const membership = await db.organizationMember.findFirst({
+    where: { userId, role: "ADMIN" },
+  });
+  if (!membership) throw new ForbiddenError("Admin access required.");
+  return membership;
+}
+
+/**
  * Verifies the signed-in user may access a given child: either they are the
  * child's registered parent, or they hold an OWNER/ADMIN membership in the
  * child's organization. This is the check every child-scoped read or

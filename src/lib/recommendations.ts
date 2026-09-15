@@ -1,4 +1,4 @@
-import { SKILL_LABELS } from "@/lib/content";
+import { SKILL_LABELS } from "@/lib/labels";
 import type { Skill } from "@/generated/prisma/client";
 
 export type Recommendation = { id: string; message: string };

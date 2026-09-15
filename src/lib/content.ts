@@ -1,6 +1,5 @@
 import "server-only";
 import { db } from "@/lib/db";
-import type { ActivityType, Skill } from "@/generated/prisma/client";
 
 // Content-browsing queries only ever filter to PUBLISHED and never select
 // Question.correctAnswer — draft content and answer keys must never reach a
@@ -8,25 +7,10 @@ import type { ActivityType, Skill } from "@/generated/prisma/client";
 // eventually needs question detail, and will apply the same PUBLISHED
 // filter plus its own server-side answer check.
 
-export const ACTIVITY_TYPE_LABELS: Record<ActivityType, string> = {
-  COUNT_SELECT: "Hitung & Pilih",
-  COUNT_INPUT: "Hitung & Isi",
-  MULTIPLE_CHOICE: "Pilihan Ganda",
-  DRAG_MATCH: "Cocokkan",
-  TRACE_NUMBER: "Jiplak Angka",
-  COUNT_CIRCLE: "Hitung & Lingkari",
-  SAME_AMOUNT: "Jumlah Sama",
-  NUMBER_RECOGNITION: "Kenali Angka",
-};
-
-export const SKILL_LABELS: Record<Skill, string> = {
-  COUNT_1_5: "Berhitung 1–5",
-  COUNT_1_10: "Berhitung 1–10",
-  COUNT_1_20: "Berhitung 1–20",
-  NUMBER_RECOGNITION_1_10: "Mengenal Angka 1–10",
-  MATCH_QUANTITY: "Mencocokkan Jumlah",
-  VISUAL_COUNTING: "Berhitung Visual",
-};
+// Label maps live in src/lib/labels.ts (no server-only guard) so client
+// components can import them directly without pulling in db.ts/pg. Re-exported
+// here for server-side code that already imports this file for its queries.
+export { ACTIVITY_TYPE_LABELS, SKILL_LABELS } from "@/lib/labels";
 
 export async function listPublishedCourses() {
   return db.course.findMany({

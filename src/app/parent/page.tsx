@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { requireGlobalAdmin, ForbiddenError } from "@/lib/permissions";
 import { logout } from "@/server/actions/auth";
 import { setActiveChild } from "@/server/actions/children";
 import { Button, buttonClasses } from "@/components/ui/Button";
@@ -22,6 +23,12 @@ export default async function ParentDashboardPage() {
     cookies(),
   ]);
   const activeChildId = cookieStore.get("activeChildId")?.value;
+  const isAdmin = await requireGlobalAdmin(session.user.id)
+    .then(() => true)
+    .catch((error) => {
+      if (error instanceof ForbiddenError) return false;
+      throw error;
+    });
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-16">
@@ -79,6 +86,12 @@ export default async function ParentDashboardPage() {
       ) : (
         <p className="text-sm text-muted">Pilih salah satu profil anak di atas untuk mulai belajar.</p>
       )}
+
+      {isAdmin ? (
+        <Link href="/admin" className="text-sm text-primary underline">
+          Buka Panel Admin
+        </Link>
+      ) : null}
 
       <form action={logout}>
         <Button type="submit" variant="ghost">
