@@ -2,7 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { requireGlobalAdmin, ForbiddenError } from "@/lib/permissions";
+import { requireGlobalAdmin, requireClassroomOrganizationRole, ForbiddenError } from "@/lib/permissions";
 import { logout } from "@/server/actions/auth";
 import { setActiveChild } from "@/server/actions/children";
 import { Button, buttonClasses } from "@/components/ui/Button";
@@ -24,6 +24,12 @@ export default async function ParentDashboardPage() {
   ]);
   const activeChildId = cookieStore.get("activeChildId")?.value;
   const isAdmin = await requireGlobalAdmin(session.user.id)
+    .then(() => true)
+    .catch((error) => {
+      if (error instanceof ForbiddenError) return false;
+      throw error;
+    });
+  const canTeach = await requireClassroomOrganizationRole(session.user.id)
     .then(() => true)
     .catch((error) => {
       if (error instanceof ForbiddenError) return false;
@@ -86,6 +92,12 @@ export default async function ParentDashboardPage() {
       ) : (
         <p className="text-sm text-muted">Pilih salah satu profil anak di atas untuk mulai belajar.</p>
       )}
+
+      {canTeach ? (
+        <Link href="/teacher" className="text-sm text-primary underline">
+          Kelas Saya
+        </Link>
+      ) : null}
 
       {isAdmin ? (
         <Link href="/admin" className="text-sm text-primary underline">

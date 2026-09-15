@@ -59,6 +59,41 @@ export async function requireOrganizationRole(
 }
 
 /**
+ * Classes (Phase 10) are a SCHOOL/TUTOR/LEARNING_CENTER concept — an
+ * INDIVIDUAL org (what self-registration always creates, PRD §7) is a
+ * single family, not a classroom. Without this check, every self-
+ * registered parent's OWNER role would qualify as "can create a class"
+ * under requireOrganizationRole alone, which isn't the intended feature
+ * boundary. Combine with requireOrganizationRole for the role check.
+ */
+export async function isClassroomOrganization(organizationId: string): Promise<boolean> {
+  const organization = await db.organization.findUnique({
+    where: { id: organizationId },
+    select: { type: true },
+  });
+  return organization != null && organization.type !== "INDIVIDUAL";
+}
+
+/**
+ * Combines the role check with the org-type check above — the single
+ * source of truth for "may this user use the /teacher area at all",
+ * shared by the page (so a parent in an INDIVIDUAL org gets notFound()
+ * rather than an empty list with a form that would only error on submit)
+ * and createClass (so the mutation enforces the same rule even if called
+ * directly).
+ */
+export async function requireClassroomOrganizationRole(userId: string) {
+  const membership = await getPrimaryOrganizationMembership(userId);
+  if (!membership || !(["OWNER", "ADMIN", "TEACHER"] as UserRole[]).includes(membership.role)) {
+    throw new ForbiddenError("Teacher access required.");
+  }
+  if (!(await isClassroomOrganization(membership.organizationId))) {
+    throw new ForbiddenError("Classes are only available for school/tutor/learning-center organizations.");
+  }
+  return membership;
+}
+
+/**
  * Global content-admin check. Course/Module/Lesson/Activity/Question are
  * platform-wide content (no organizationId), so "who can manage content"
  * isn't an org-membership question the way child access is. There is no
@@ -97,6 +132,26 @@ export async function requireChildAccess(userId: string, childId: string) {
   }
 
   throw new ForbiddenError("You do not have access to this child.");
+}
+
+/**
+ * Verifies the signed-in user may manage a given class: either they are the
+ * class's own teacher, or they hold an OWNER/ADMIN membership in the class's
+ * organization — the same "owner/admin can reach anything in their org"
+ * pattern as requireChildAccess.
+ */
+export async function requireClassAccess(userId: string, classId: string) {
+  const classRecord = await db.class.findUnique({ where: { id: classId } });
+  if (!classRecord) throw new ForbiddenError("Class not found.");
+
+  if (classRecord.teacherUserId === userId) return classRecord;
+
+  const membership = await getOrganizationMembership(userId, classRecord.organizationId);
+  if (membership && (membership.role === "OWNER" || membership.role === "ADMIN")) {
+    return classRecord;
+  }
+
+  throw new ForbiddenError("You do not have access to this class.");
 }
 
 /**

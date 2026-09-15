@@ -334,6 +334,60 @@ async function main() {
     create: { childId: child.id, courseId: course.id },
   });
 
+  // --- Phase 10: a SCHOOL organization with a teacher, a class, and a
+  // couple of school-managed children (no parent account of their own —
+  // Child.parentUserId is nullable for exactly this case). ---
+  const school = await db.organization.upsert({
+    where: { id: "org-demo-school" },
+    update: {},
+    create: { id: "org-demo-school", name: "Demo School", type: "SCHOOL" },
+  });
+
+  const teacherPasswordHash = await bcrypt.hash(DEV_PASSWORD, 10);
+  const teacher = await db.user.upsert({
+    where: { email: "teacher@countinglms.dev" },
+    update: {},
+    create: {
+      email: "teacher@countinglms.dev",
+      name: "Demo Teacher",
+      passwordHash: teacherPasswordHash,
+    },
+  });
+  await db.organizationMember.upsert({
+    where: { organizationId_userId: { organizationId: school.id, userId: teacher.id } },
+    update: { role: "TEACHER" },
+    create: { organizationId: school.id, userId: teacher.id, role: "TEACHER" },
+  });
+
+  const classroom = await db.class.upsert({
+    where: { id: "class-demo-a" },
+    update: {},
+    create: { id: "class-demo-a", organizationId: school.id, name: "Kelas A", teacherUserId: teacher.id },
+  });
+
+  const studentDefs = [
+    { id: "child-demo-rara", displayName: "Rara", ageBand: "AGE_5_6" as const },
+    { id: "child-demo-dimas", displayName: "Dimas", ageBand: "AGE_7_8" as const },
+  ];
+  for (const studentDef of studentDefs) {
+    const student = await db.child.upsert({
+      where: { id: studentDef.id },
+      update: {},
+      create: {
+        id: studentDef.id,
+        organizationId: school.id,
+        parentUserId: null,
+        displayName: studentDef.displayName,
+        ageBand: studentDef.ageBand,
+      },
+    });
+    await db.classMember.upsert({
+      where: { classId_childId: { classId: classroom.id, childId: student.id } },
+      update: {},
+      create: { classId: classroom.id, childId: student.id },
+    });
+  }
+
   let globalQuestionIndex = 0;
 
   for (let m = 0; m < moduleDefs.length; m++) {
@@ -437,6 +491,8 @@ async function main() {
   console.log(`  Child:        ${child.displayName} (${child.id})`);
   console.log(`  Course:       ${course.title} — ${moduleDefs.length} modules, ${moduleDefs.reduce((n, m) => n + m.lessons.length, 0)} lessons, ${globalQuestionIndex} questions`);
   console.log(`  Badges:       ${badgeDefs.length}`);
+  console.log(`  Teacher login: teacher@countinglms.dev / ${DEV_PASSWORD}`);
+  console.log(`  Class:         ${classroom.name} at ${school.name} (${studentDefs.length} students)`);
 }
 
 main()

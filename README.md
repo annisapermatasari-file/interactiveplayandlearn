@@ -32,10 +32,11 @@ Open [http://localhost:3000](http://localhost:3000).
 
 Demo accounts created by the seed (`prisma/seed.ts`, development only):
 
-| Role   | Email                     | Password       |
-|--------|---------------------------|----------------|
-| Admin  | admin@countinglms.dev     | ChangeMe123!   |
-| Parent | parent@countinglms.dev    | ChangeMe123!   |
+| Role    | Email                     | Password       |
+|---------|---------------------------|----------------|
+| Admin   | admin@countinglms.dev     | ChangeMe123!   |
+| Parent  | parent@countinglms.dev    | ChangeMe123!   |
+| Teacher | teacher@countinglms.dev   | ChangeMe123!   |
 
 ## Scripts
 
@@ -58,9 +59,10 @@ src/
 │                 #   /parent/children[/[childId][/progress]],
 │                 #   /learn, /learn/courses/[courseId], /learn/lessons/[lessonId][/play],
 │                 #   /admin, /admin/courses/[courseId][/lessons/[lessonId]], /admin/questions/[questionId],
+│                 #   /teacher, /teacher/classes/[classId],
 │                 #   /api/auth/[...nextauth]
-├── components/   # ui/, auth/, child/, learning/, activities/, admin/, parent/, teacher/
-├── lib/          # domain logic (db, auth, auth.config, permissions, content, labels, admin, scoring, progress, recommendations)
+├── components/   # ui/, auth/, child/, learning/, activities/, admin/, teacher/, parent/
+├── lib/          # domain logic (db, auth, auth.config, permissions, content, labels, admin, teacher, scoring, progress, recommendations)
 ├── generated/    # Prisma client output (git-ignored, regenerated via `prisma generate`)
 ├── server/
 │   └── actions/  # server actions (mutations)
