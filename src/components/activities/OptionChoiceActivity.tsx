@@ -38,12 +38,11 @@ export function OptionChoiceActivity({ question, answerState, onSelect, disabled
               disabled={locked}
               aria-label={option.label}
               onClick={() => onSelect(option.id)}
-              style={{ animationDelay: `${i * 60}ms` }}
+              style={{ transitionDelay: `${i * 60}ms` }}
               className={cn(
-                "reveal relative flex h-28 items-center justify-center overflow-hidden rounded-3xl border-2 text-2xl font-semibold",
-                "transition-[transform,background-color,border-color] duration-150 ease-[var(--spring-out)]",
+                "reveal answer-option-transition relative flex h-28 items-center justify-center overflow-hidden rounded-3xl border-2 text-2xl font-semibold",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                !locked && "hover-scale border-border bg-surface hover:border-primary/50 active:scale-[0.96] active:duration-75",
+                !locked && "hover-scale border-border bg-surface hover:border-primary/50",
                 locked && !answered && "border-border bg-surface opacity-70",
                 answered && !isRevealedCorrect && !isWrongSelection && "border-border bg-surface opacity-40",
                 isRevealedCorrect && "celebrate border-success bg-success/10",

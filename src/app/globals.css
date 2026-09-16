@@ -131,14 +131,48 @@ h2, h3 {
 .shake { animation: gentle-shake 240ms ease-in-out; }
 
 /* Entrance for marketing/first-load content only — never on frequently
-   re-rendered UI. Stagger via inline `animationDelay`, not more keyframes. */
-@keyframes fade-up {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: translateY(0); }
+   re-rendered UI. Stagger via inline `transitionDelay`.
+   Deliberately @starting-style, not a `forwards`-filled @keyframes
+   animation: per the CSS cascade, a still-"filling" animation outranks a
+   later plain `:hover` rule on the same element, which silently broke
+   `.hover-lift`/`.hover-scale` on every entrance element (feature cards,
+   course cards, answer buttons) until caught by hovering them in a real
+   browser. A transition has no such lingering priority once it ends.
+
+   `.reveal` declares ONLY the `@starting-style` (pre-entrance) values —
+   deliberately no resting `opacity`/`transform` declaration of its own,
+   for the same cascade-layer reason: an unlayered rule beats a layered one
+   regardless of specificity, so a permanent `.reveal { transform: ...; }`
+   would silently block every layered Tailwind `active:`/`hover:` utility
+   that also targets `transform` on the same element (this broke the
+   answer button's `active:scale-[0.96]` press feedback until caught by
+   pressing it in a real browser). The resting value the transition ends
+   at is simply the element's ordinary computed style — `opacity: 1` and
+   `transform: none` by CSS's own initial values when nothing else sets
+   them, which is visually identical to the old explicit declaration.
+   Pair `.reveal` with `.reveal-transition` (the common opacity+transform
+   case) or a component's own complete transition list when it needs more
+   (`transition` is a single property — same one-rule-wins constraint). */
+@starting-style {
+  .reveal {
+    opacity: 0;
+    transform: translateY(14px);
+  }
 }
-.reveal {
-  opacity: 0;
-  animation: fade-up 500ms var(--spring-out) forwards;
+.reveal-transition {
+  transition: opacity 500ms var(--spring-out), transform 500ms var(--spring-out);
+}
+
+/* The answer option button needs more than .reveal-transition covers —
+   its own hover/press/celebrate states also change background/border
+   color — so it gets its own complete list rather than fighting
+   .reveal-transition over the shared `transition` property. */
+.answer-option-transition {
+  transition:
+    opacity 500ms var(--spring-out),
+    transform 150ms var(--spring-out),
+    background-color 150ms var(--spring-out),
+    border-color 150ms var(--spring-out);
 }
 
 /* Slow decorative drift for hero backgrounds — purely ornamental, frozen
@@ -164,23 +198,44 @@ h2, h3 {
 }
 
 /* Hover motion gated to real pointers — a tap on tablet/touch must not
-   trigger a hover transform (PRD's play tier runs on tablets first). */
+   trigger a hover transform (PRD's play tier runs on tablets first).
+   transition-duration is overridden here (not just the transform value)
+   because `.reveal` also declares a `transform` transition at 500ms for
+   its entrance — without this override, hovering a `.reveal` element
+   (every course/feature card) would inherit that slow entrance duration
+   instead of a snappy hover response. The `:hover` pseudo-class gives
+   this rule higher specificity than `.reveal`'s plain class rule, so it
+   wins while hovered and reverts to `.reveal`'s timing on mouseleave. */
 @media (hover: hover) and (pointer: fine) {
-  .hover-scale:hover { transform: scale(1.03); }
-  .hover-lift:hover { transform: translateY(-4px); }
+  .hover-scale:hover { transform: scale(1.03); transition-duration: 150ms; }
+  .hover-lift:hover { transform: translateY(-4px); transition-duration: 200ms; }
 }
 
-@keyframes fade-only {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* Press feedback, deliberately NOT gated to (hover: hover) — a tap must
+   press-feedback on touch too. Same cascade-layer reasoning as above: this
+   has to be a plain unlayered rule, not Tailwind's `active:` utility
+   (which lives in @layer utilities and would lose to any unlayered rule
+   on the element regardless of specificity — this is what silently
+   dropped the button's press-scale before). Declared after `.hover-scale:hover`
+   so that on a mouse (where :hover and :active can both be true at once),
+   equal specificity ties resolve to source order and the press-shrink
+   correctly overrides the hover-grow. */
+.hover-scale:active {
+  transform: scale(0.96);
+  transition-duration: 75ms;
 }
 
+/* .reveal-transition and the answer button's own transition list need no
+   reduced-motion override of their own: the universal `*` rule below
+   already strips `transform` from every element's transition-property
+   (keeping opacity/background-color/border-color) — exactly "keep the
+   fade, drop the translateY/scale" for both. Only the four keyframe
+   `animation`s below get an explicit override, since `animation: none` is
+   more predictable than relying on the universal rule's 0.01ms/1-iteration
+   trick, which still plays a (near-instant but real) truncated frame. */
 @media (prefers-reduced-motion: reduce) {
   .celebrate, .shake, .blob, .bar-fill {
     animation: none !important;
-  }
-  .reveal {
-    animation: fade-only 200ms ease forwards;
   }
 }
 

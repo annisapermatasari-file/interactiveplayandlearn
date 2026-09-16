@@ -20,8 +20,8 @@ export function CourseCard({
 
   return (
     <Card
-      className="reveal hover-lift flex flex-col gap-3 rounded-3xl transition-transform duration-200 ease-[var(--spring-out)]"
-      style={{ animationDelay: `${index * 60}ms` }}
+      className="reveal reveal-transition hover-lift flex flex-col gap-3 rounded-3xl"
+      style={{ transitionDelay: `${index * 60}ms` }}
     >
       <div className="flex items-center gap-3">
         <span aria-hidden className={cn("h-3 w-3 shrink-0 rounded-full", dotColor)} />

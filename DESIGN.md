@@ -190,36 +190,62 @@ animation library.
 |---|---|---|---|
 | `.celebrate` | Feedback — a correct answer was heard | Occasional (once/question) | `pop-in` keyframes, `scale(0.85)→1` + opacity, `--spring-press`, 320ms |
 | `.shake` | Feedback — an incorrect answer was heard | Occasional | `gentle-shake` keyframes, `translateX` ±4px, `ease-in-out`, 240ms |
-| `.reveal` | Preventing a jarring change — content appearing on first load/question change | Rare (page load) / occasional (per question) | `fade-up` keyframes, `translateY(14px)→0` + opacity, `--spring-out`, 500ms, staggered via inline `animationDelay` (60–120ms steps) |
+| `.reveal` + `.reveal-transition` | Preventing a jarring change — content appearing on first load/question change | Rare (page load) / occasional (per question) | `@starting-style` (`opacity: 0; translateY(14px)`) + a plain `transition: opacity, transform` at `--spring-out`, 500ms, staggered via inline `transitionDelay` (60–120ms steps) |
+| `.answer-option-transition` | Same as `.reveal`, plus the option button's own hover/press/celebrate color changes | Occasional | its own complete `transition` list (opacity 500ms, transform/background-color/border-color 150ms) — see the split-class note below |
 | `.blob` | Delight — marketing hero only, rare/first-time tier | Continuous but decorative | `float-blob` keyframes, `translate`+`scale`, `--ease-in-out`, 9s loop |
 | `.bar-fill` | Explanation — demonstrating the progress-tracking feature on the marketing mock | Rare (page load) | `bar-fill` keyframes, `scaleX(0)→1` (never animate `width`), `transform-origin: left`, `--ease-in-out`, 700ms |
-| `.hover-scale` / `.hover-lift` | State indication — pointer is over an interactive element | Tens/day | plain `transform: scale`/`translateY`, gated to `@media (hover: hover) and (pointer: fine)` so a tablet tap can't stick a hover transform |
+| `.hover-scale` / `.hover-lift` | State indication — pointer is over an interactive element | Tens/day | plain `transform: scale`/`translateY`, gated to `@media (hover: hover) and (pointer: fine)` so a tablet tap can't stick a hover transform; `.hover-scale:active` (ungated) gives the press-shrink |
 
-Gate notes, one line each:
-- `.reveal` is remounted per lesson question (`key={question.id}` on the
-  option grid's wrapping `Card` in `LessonPlayer`) so the entrance replays
-  as state indication ("a new question loaded"), not just on first paint.
-- The activity option buttons keep a decorative top accent bar (rotating
-  the four hues) **only while unanswered** — it's replaced by the ✓/✗ badge
-  the instant an answer is revealed, so decoration never competes with the
-  correctness signal.
-- `.blob` and `.bar-fill` exist only on the public marketing page — the
-  play tier's own screens keep animation to feedback/state-indication
-  (`.celebrate`/`.shake`/`.reveal`), per §1's "no autoplaying background
-  motion in front of the child" line.
+**Two cascade gotchas found by actually hovering/pressing elements in a
+browser, not by reading the CSS** — both are now load-bearing constraints,
+not incidental choices:
 
-Reduced motion (`globals.css`, one block, not per-component):
+1. **`.reveal` must not be a `forwards`-filled `@keyframes` animation.**
+   Per the CSS cascade order, a still-"filling" animation outranks a later
+   plain `:hover`/`:active` rule on the *same* element. The first version
+   of `.reveal` used `animation: fade-up 500ms ... forwards`, which
+   silently broke `.hover-lift`/`.hover-scale` on every card and answer
+   button — the hover/press rules were correct, but the finished entrance
+   animation always won anyway. Fixed by switching to `@starting-style` +
+   a plain `transition`, which has no such lingering priority once it ends.
+2. **`.reveal` must not declare `transition`/`transform` unconditionally
+   either.** `transition` and `transform` are each a single property —
+   whichever rule sets them wins *in full*, and an unlayered plain-CSS rule
+   (like `.reveal` in `globals.css`) always beats a layered Tailwind
+   utility (like `active:scale-[0.96]`) *regardless of specificity*,
+   because CSS cascade layers rank above specificity. A first fix attempt
+   left `.reveal { transform: translateY(0); }` as a permanent resting
+   declaration, which silently blocked the answer button's
+   `active:scale-[0.96]` press feedback the same way. Fixed by having
+   `.reveal` declare *only* the `@starting-style` block (no resting
+   `transform`/`opacity` at all — the browser's own initial values serve
+   as the resting state) and moving the actual `transition` declaration
+   into `.reveal-transition` (the common two-property case) or
+   `.answer-option-transition` (the button's four-property case), and by
+   replacing `active:scale-[0.96]` with an unlayered `.hover-scale:active`
+   rule so press-feedback works everywhere, touch included, not just where
+   Tailwind's layer happens to win.
+
+**Rule going forward:** never let `.reveal` alone govern a property that
+some other rule (hover, active, or a component's own interaction state)
+also needs to change on the same element. Give that element its own
+complete `transition` list instead of layering two competing ones.
+
+Reduced motion (`globals.css`, one block):
 ```css
 @media (prefers-reduced-motion: reduce) {
   .celebrate, .shake, .blob, .bar-fill { animation: none !important; }
-  .reveal { animation: fade-only 200ms ease forwards; } /* opacity only, keeps comprehension */
 }
 ```
-`.blob`/`.bar-fill` go to `none` outright (purely decorative, nothing lost).
-`.reveal` keeps a fade (content still needs to appear) but drops the
-`translateY`. `.celebrate`/`.shake` drop to the color/icon feedback that's
-already there regardless (✓/✗ badge, success/danger border) — motion was
-never the only signal.
+`.reveal-transition`/`.answer-option-transition` need no override of their
+own here: the pre-existing universal `* { transition-property: opacity,
+background-color, color, border-color !important; ... }` rule (below this
+block in `globals.css`) already strips `transform` from every element's
+transition list site-wide, which is exactly "keep the fade/color feedback,
+drop the translateY/scale" for both. `.blob`/`.bar-fill` go to `none`
+outright (purely decorative, nothing lost). `.celebrate`/`.shake` drop to
+the color/icon feedback that's already there regardless (✓/✗ badge,
+success/danger border) — motion was never the only signal.
 
 Rules:
 - Press feedback is always instant (0ms delay before the visual starts);

@@ -106,21 +106,21 @@ export default async function HomePage() {
             />
           </div>
 
-          <span className="reveal rounded-full border border-border bg-surface px-4 py-1 text-sm text-muted">
+          <span className="reveal reveal-transition rounded-full border border-border bg-surface px-4 py-1 text-sm text-muted">
             Untuk anak usia dini · Berhitung & mengenal angka
           </span>
           <h1
-            className="reveal text-display max-w-2xl text-4xl font-semibold sm:text-6xl"
-            style={{ animationDelay: "80ms" }}
+            className="reveal reveal-transition text-display max-w-2xl text-4xl font-semibold sm:text-6xl"
+            style={{ transitionDelay: "80ms" }}
           >
             Belajar berhitung yang terasa seperti bermain
           </h1>
-          <p className="reveal max-w-xl text-lg text-muted" style={{ animationDelay: "160ms" }}>
+          <p className="reveal reveal-transition max-w-xl text-lg text-muted" style={{ transitionDelay: "160ms" }}>
             Platform belajar berhitung interaktif untuk anak usia dini — soal
             bergambar, skor dan XP yang tervalidasi server, serta progres yang
             bisa dipantau orang tua dan guru secara real time.
           </p>
-          <div className="reveal flex flex-wrap justify-center gap-3" style={{ animationDelay: "240ms" }}>
+          <div className="reveal reveal-transition flex flex-wrap justify-center gap-3" style={{ transitionDelay: "240ms" }}>
             {session?.user ? (
               <Link href="/parent" className={buttonClasses({ size: "lg" })}>
                 Buka Dashboard
@@ -150,7 +150,7 @@ export default async function HomePage() {
 
           <div className="grid gap-6 sm:grid-cols-2">
             {/* Activity mock */}
-            <Card className="reveal flex flex-col gap-4">
+            <Card className="reveal reveal-transition flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
                   {ACTIVITY_TYPE_LABELS.COUNT_SELECT}
@@ -161,7 +161,7 @@ export default async function HomePage() {
               <p className="text-lg font-medium">Berapa banyak apel di bawah ini?</p>
               <p aria-hidden className="flex justify-center gap-1 text-4xl leading-none">
                 {[0, 1, 2, 3].map((i) => (
-                  <span key={i} className="reveal" style={{ animationDelay: `${300 + i * 80}ms` }}>
+                  <span key={i} className="reveal reveal-transition" style={{ transitionDelay: `${300 + i * 80}ms` }}>
                     🍎
                   </span>
                 ))}
@@ -182,7 +182,7 @@ export default async function HomePage() {
             </Card>
 
             {/* Progress mock */}
-            <Card className="reveal flex flex-col gap-4" style={{ animationDelay: "120ms" }}>
+            <Card className="reveal reveal-transition flex flex-col gap-4" style={{ transitionDelay: "120ms" }}>
               <div className="flex items-center justify-between">
                 <p className="font-medium">Progres Rara</p>
                 <span className="rounded-full bg-accent/20 px-3 py-1 text-xs font-medium text-accent-foreground">
@@ -230,8 +230,8 @@ export default async function HomePage() {
               return (
                 <div
                   key={item.step}
-                  className="reveal flex flex-col gap-2"
-                  style={{ animationDelay: `${i * 60}ms` }}
+                  className="reveal reveal-transition flex flex-col gap-2"
+                  style={{ transitionDelay: `${i * 60}ms` }}
                 >
                   <span
                     className={cn(
@@ -257,8 +257,8 @@ export default async function HomePage() {
               return (
                 <Card
                   key={feature.title}
-                  className="reveal hover-lift relative overflow-hidden transition-transform duration-200 ease-[var(--spring-out)]"
-                  style={{ animationDelay: `${i * 60}ms` }}
+                  className="reveal reveal-transition hover-lift relative overflow-hidden"
+                  style={{ transitionDelay: `${i * 60}ms` }}
                 >
                   <span aria-hidden className={cn("absolute inset-y-0 left-0 w-1", accent.bg)} />
                   <p className="font-medium">{feature.title}</p>
