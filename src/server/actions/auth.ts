@@ -26,25 +26,31 @@ export async function registerParent(_prevState: FormState, formData: FormData):
   }
   const { name, email, password } = parsed.data;
 
-  const existing = await db.user.findUnique({ where: { email } });
-  if (existing) {
-    return { error: "Email sudah terdaftar." };
+  try {
+    const existing = await db.user.findUnique({ where: { email } });
+    if (existing) {
+      return { error: "Email sudah terdaftar." };
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    await db.$transaction(async (tx) => {
+      const user = await tx.user.create({ data: { name, email, passwordHash } });
+      const organization = await tx.organization.create({
+        data: { name: `Keluarga ${name}`, type: "INDIVIDUAL" },
+      });
+      await tx.organizationMember.create({
+        data: { organizationId: organization.id, userId: user.id, role: "OWNER" },
+      });
+      await tx.subscription.create({
+        data: { organizationId: organization.id, plan: "FREE", status: "ACTIVE" },
+      });
+    });
+
+  } catch (error) {
+    console.error("Parent registration failed", error);
+    return { error: "Pendaftaran gagal karena layanan sedang bermasalah. Coba lagi nanti." };
   }
-
-  const passwordHash = await bcrypt.hash(password, 10);
-
-  await db.$transaction(async (tx) => {
-    const user = await tx.user.create({ data: { name, email, passwordHash } });
-    const organization = await tx.organization.create({
-      data: { name: `Keluarga ${name}`, type: "INDIVIDUAL" },
-    });
-    await tx.organizationMember.create({
-      data: { organizationId: organization.id, userId: user.id, role: "OWNER" },
-    });
-    await tx.subscription.create({
-      data: { organizationId: organization.id, plan: "FREE", status: "ACTIVE" },
-    });
-  });
 
   redirect("/login?registered=1");
 }
