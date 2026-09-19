@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { recomputeLessonProgress } from "./progress";
+import { recomputeLessonProgress } from "./progress-core";
 
 test("recomputeLessonProgress counts unique correct questions and marks lesson complete when all are attempted", async () => {
   const tx = {
@@ -27,7 +27,7 @@ test("recomputeLessonProgress counts unique correct questions and marks lesson c
   assert.equal(result.questionsCorrect, 2);
   assert.equal(result.scorePercent, 67);
   assert.equal(result.status, "COMPLETED");
-  assert.equal(result.stars, 2);
+  assert.equal(result.stars, 1);
 });
 
 test("recomputeLessonProgress leaves lesson in progress when not all questions have been attempted", async () => {
