@@ -4,8 +4,9 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { getActiveChild } from "@/lib/permissions";
-import { calculateScorePercent, calculateStars, calculateXpForAnswer } from "@/lib/scoring";
+import { calculateXpForAnswer } from "@/lib/scoring";
 import { checkAndAwardBadges } from "@/lib/gamification";
+import { recomputeLessonProgress } from "@/lib/progress";
 
 const submitAnswerSchema = z.object({
   lessonId: z.string().min(1),
@@ -129,44 +130,7 @@ export async function submitAnswer(input: unknown): Promise<SubmitAnswerResult> 
       },
     });
 
-    const lessonAttempts = await tx.attempt.findMany({
-      where: { childId: child.id, lessonId: parsed.data.lessonId },
-      select: { questionId: true, isCorrect: true },
-    });
-    const attemptedQuestionIds = new Set(lessonAttempts.map((attempt) => attempt.questionId));
-    const correctQuestionIds = new Set(
-      lessonAttempts.filter((attempt) => attempt.isCorrect).map((attempt) => attempt.questionId),
-    );
-    const questionsCorrect = correctQuestionIds.size;
-    const scorePercent = calculateScorePercent(questionsCorrect, lessonQuestionCount);
-    const isNowComplete = lessonQuestionCount > 0 && attemptedQuestionIds.size >= lessonQuestionCount;
-
-    const existingProgress = await tx.lessonProgress.findUnique({
-      where: { childId_lessonId: { childId: child.id, lessonId: parsed.data.lessonId } },
-    });
-
-    await tx.lessonProgress.upsert({
-      where: { childId_lessonId: { childId: child.id, lessonId: parsed.data.lessonId } },
-      update: {
-        status: isNowComplete ? "COMPLETED" : "IN_PROGRESS",
-        questionsTotal: lessonQuestionCount,
-        questionsCorrect,
-        scorePercent,
-        stars: isNowComplete ? calculateStars(scorePercent) : (existingProgress?.stars ?? 0),
-        completedAt: isNowComplete ? (existingProgress?.completedAt ?? new Date()) : (existingProgress?.completedAt ?? null),
-      },
-      create: {
-        childId: child.id,
-        lessonId: parsed.data.lessonId,
-        status: isNowComplete ? "COMPLETED" : "IN_PROGRESS",
-        questionsTotal: lessonQuestionCount,
-        questionsCorrect,
-        scorePercent,
-        stars: isNowComplete ? calculateStars(scorePercent) : 0,
-        startedAt: new Date(),
-        completedAt: isNowComplete ? new Date() : null,
-      },
-    });
+    await recomputeLessonProgress(tx, child.id, parsed.data.lessonId, lessonQuestionCount);
 
     let xpAwardedThisCall = 0;
     if (isCorrect) {

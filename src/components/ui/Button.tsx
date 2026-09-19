@@ -5,10 +5,10 @@ export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 export type ButtonSize = "sm" | "md" | "lg";
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: "bg-primary text-primary-foreground hover:opacity-90",
-  secondary: "bg-accent text-accent-foreground hover:opacity-90",
-  ghost: "bg-transparent text-foreground hover:bg-border",
-  danger: "bg-danger text-white hover:opacity-90",
+  primary: "bg-primary text-primary-foreground shadow-[0_10px_24px_rgba(255,138,61,0.28)] hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(255,138,61,0.32)]",
+  secondary: "bg-accent text-accent-foreground shadow-[0_10px_22px_rgba(255,209,102,0.25)] hover:-translate-y-0.5",
+  ghost: "bg-white/70 text-foreground border border-border hover:bg-white",
+  danger: "bg-danger text-white shadow-[0_10px_22px_rgba(238,91,91,0.22)] hover:-translate-y-0.5",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -28,8 +28,8 @@ export function buttonClasses({
   className?: string;
 } = {}) {
   return cn(
-    "inline-flex items-center justify-center gap-2 rounded-xl font-medium",
-    "transition-[transform,background-color,opacity] duration-150 ease-[var(--spring-out)]",
+    "inline-flex items-center justify-center gap-2 rounded-2xl font-semibold",
+    "transition-all duration-150 ease-[var(--spring-out)]",
     "active:scale-[0.97] active:duration-75",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
     "disabled:pointer-events-none disabled:opacity-50",

@@ -1,28 +1,28 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fafaf9;
-  --foreground: #1c1917;
+  --background: #fffaf3;
+  --foreground: #2b1f1a;
   --surface: #ffffff;
-  --surface-translucent: rgb(255 255 255 / 0.72);
-  --border: #e7e5e4;
+  --surface-translucent: rgb(255 255 255 / 0.8);
+  --border: #f3d8be;
 
-  --primary: #2563eb;
-  --primary-foreground: #ffffff;
+  --primary: #ff8a3d;
+  --primary-foreground: #fffaf3;
 
-  --accent: #f59e0b;
-  --accent-foreground: #1c1917;
-  --topic: #7c3aed;         /* violet — course/topic tag #2 */
+  --accent: #ffd166;
+  --accent-foreground: #3d2a18;
+  --topic: #7c5cff;
   --topic-foreground: #ffffff;
-  --topic-2: #0d9488;       /* teal — course/topic tag #3 */
+  --topic-2: #19b6a6;
   --topic-2-foreground: #ffffff;
-  --topic-3: #db2777;       /* pink — course/topic tag #4 */
+  --topic-3: #ff5aa5;
   --topic-3-foreground: #ffffff;
 
-  --success: #16a34a;
-  --danger: #dc2626;
+  --success: #22a06b;
+  --danger: #ee5b5b;
 
-  --muted: #78716c;
+  --muted: #7c655c;
 
   --spring-out: cubic-bezier(0.16, 1, 0.3, 1);      /* strong ease-out — entrances, press release */
   --spring-press: cubic-bezier(0.34, 1.56, 0.64, 1); /* momentum-only — celebrations, flicked feedback */
@@ -86,7 +86,10 @@
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(circle at top, rgba(255, 209, 102, 0.35), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(124, 92, 255, 0.18), transparent 22%),
+    var(--background);
   color: var(--foreground);
   font: 100%/1.5 var(--font-sans), system-ui, Arial, Helvetica, sans-serif;
 }

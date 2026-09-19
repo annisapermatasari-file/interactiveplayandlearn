@@ -10,7 +10,7 @@ export function Card({ className, translucent, ...props }: CardProps) {
   return (
     <div
       className={cn(
-        "rounded-2xl border border-border p-6 shadow-sm",
+        "rounded-[28px] border border-border bg-white/90 p-6 shadow-[0_12px_28px_rgba(43,31,26,0.08)]",
         translucent ? "material" : "bg-surface",
         className,
       )}
