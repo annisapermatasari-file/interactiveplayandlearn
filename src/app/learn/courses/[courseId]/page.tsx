@@ -5,6 +5,7 @@ import { getPublishedCourseById } from "@/lib/content";
 import { getLessonProgressMap } from "@/lib/progress";
 import { ActiveChildBanner } from "@/components/learning/ActiveChildBanner";
 import { LessonListItem } from "@/components/learning/LessonListItem";
+import { BuddyWelcome } from "@/components/learning/BuddyWelcome";
 
 export default async function CoursePage({ params }: PageProps<"/learn/courses/[courseId]">) {
   const { courseId } = await params;
@@ -19,6 +20,7 @@ export default async function CoursePage({ params }: PageProps<"/learn/courses/[
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-16">
       <ActiveChildBanner child={child} />
+      <BuddyWelcome message="Ayo pilih misi belajar. Kita selesaikan bersama!" />
 
       <div>
         <Link href="/learn" className="text-sm text-muted underline">

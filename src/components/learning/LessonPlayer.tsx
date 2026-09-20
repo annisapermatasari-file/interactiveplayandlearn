@@ -27,6 +27,7 @@ export function LessonPlayer({
   const [answerState, setAnswerState] = useState<ActivityAnswerState>({ status: "unanswered" });
   const [results, setResults] = useState<boolean[]>([]);
   const [streak, setStreak] = useState(0);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   // XP actually credited by the server this playthrough (0 if a question
   // was already answered correctly before — XP only pays out once per
   // question ever, see submitAnswer), and any badges newly awarded.
@@ -129,6 +130,7 @@ export function LessonPlayer({
   }
 
   function playFeedbackTone(isCorrect: boolean) {
+    if (!soundEnabled) return;
     if (typeof window === "undefined") return;
     const AudioContextClass = window.AudioContext ||
       (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -149,9 +151,33 @@ export function LessonPlayer({
     oscillator.addEventListener("ended", () => void context.close(), { once: true });
   }
 
+  function speakBuddy() {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const message = buddyState === "correct"
+      ? "Hebat! Jawabanmu benar!"
+      : buddyState === "wrong"
+        ? "Tidak apa-apa. Kita coba soal berikutnya bersama-sama."
+        : "Ayo pilih jawabanmu. Aku menemanimu!";
+    const utterance = new SpeechSynthesisUtterance(message);
+    utterance.lang = "id-ID";
+    utterance.rate = 0.9;
+    window.speechSynthesis.speak(utterance);
+  }
+
   return (
     <div className="game-board flex flex-col gap-6">
-      <LearningBuddy state={buddyState} />
+      <LearningBuddy state={buddyState} onInteract={speakBuddy} />
+      <div className="flex items-center justify-end">
+        <button
+          type="button"
+          className="sound-toggle"
+          aria-pressed={soundEnabled}
+          onClick={() => setSoundEnabled((enabled) => !enabled)}
+        >
+          {soundEnabled ? "🔊 Suara aktif" : "🔇 Suara mati"}
+        </button>
+      </div>
       <GameHud
         level={index + 1}
         totalQuestions={questions.length}

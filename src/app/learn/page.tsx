@@ -2,6 +2,7 @@ import { requireActiveChild } from "@/lib/permissions";
 import { listPublishedCourses, getEnrollment } from "@/lib/content";
 import { ActiveChildBanner } from "@/components/learning/ActiveChildBanner";
 import { CourseCard } from "@/components/learning/CourseCard";
+import { BuddyWelcome } from "@/components/learning/BuddyWelcome";
 
 export default async function LearnPage() {
   // Redirects to /parent if no active child is selected (Phase 3).
@@ -14,6 +15,7 @@ export default async function LearnPage() {
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-16">
       <ActiveChildBanner child={child} />
+      <BuddyWelcome />
 
       <div>
         <h1 className="text-2xl font-semibold">Ayo Belajar! 🎈</h1>

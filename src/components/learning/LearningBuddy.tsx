@@ -2,7 +2,13 @@
 
 import { cn } from "@/lib/utils";
 
-export function LearningBuddy({ state }: { state: "ready" | "thinking" | "correct" | "wrong" | "finished" }) {
+export function LearningBuddy({
+  state,
+  onInteract,
+}: {
+  state: "ready" | "thinking" | "correct" | "wrong" | "finished";
+  onInteract?: () => void;
+}) {
   const content = {
     ready: { face: "🦊", message: "Aku siap menemanimu! Kamu pasti bisa." },
     thinking: { face: "🦊", message: "Hmm, pilih jawaban yang menurutmu paling tepat." },
@@ -26,6 +32,11 @@ export function LearningBuddy({ state }: { state: "ready" | "thinking" | "correc
       <div>
         <p className="text-xs font-bold uppercase tracking-wide text-accent-foreground">Buddy Belajar</p>
         <p className="text-sm font-medium text-foreground">{content.message}</p>
+        {onInteract ? (
+          <button type="button" className="buddy-talk-button mt-2" onClick={onInteract}>
+            🔊 Sapa Buddy
+          </button>
+        ) : null}
       </div>
     </aside>
   );
