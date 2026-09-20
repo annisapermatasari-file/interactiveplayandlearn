@@ -147,6 +147,36 @@ h2, h3 {
 .buddy-panel-wrong .buddy-face { animation: gentle-shake 260ms ease-in-out; }
 .question-visual { box-shadow: inset 0 -8px 0 rgb(255 209 102 / 0.12); }
 .question-emoji { letter-spacing: 0.08em; filter: drop-shadow(0 5px 0 rgb(43 31 26 / 0.08)); }
+.game-board {
+  position: relative;
+  isolation: isolate;
+}
+.game-board::before,
+.game-board::after {
+  position: absolute;
+  z-index: -1;
+  font-size: 2.5rem;
+  opacity: 0.5;
+  pointer-events: none;
+}
+.game-board::before { content: "✦"; right: -0.5rem; top: 8rem; color: var(--accent); }
+.game-board::after { content: "✿"; left: -1rem; bottom: 8rem; color: var(--topic-2); }
+.game-stat {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: 1rem;
+  background: rgb(255 250 243 / 0.9);
+  padding: 0.55rem 0.35rem;
+}
+.game-stat-icon { flex-shrink: 0; font-size: 1.1rem; line-height: 1; }
+.game-stat-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.72rem; font-weight: 800; }
+.game-progress-track { border: 2px solid rgb(255 255 255 / 0.9); box-shadow: inset 0 2px 4px rgb(43 31 26 / 0.08); }
+.game-progress-fill { position: relative; overflow: hidden; }
+.game-progress-fill::after { content: ""; position: absolute; inset: 0; background: rgb(255 255 255 / 0.28); transform: translateX(-100%); animation: progress-shimmer 1.8s ease-in-out infinite; }
+@keyframes progress-shimmer { to { transform: translateX(100%); } }
 .sequence-track {
   display: flex;
   width: min(100%, 31rem);
@@ -281,7 +311,7 @@ h2, h3 {
    more predictable than relying on the universal rule's 0.01ms/1-iteration
    trick, which still plays a (near-instant but real) truncated frame. */
 @media (prefers-reduced-motion: reduce) {
-  .celebrate, .shake, .blob, .bar-fill, .buddy-face {
+  .celebrate, .shake, .blob, .bar-fill, .buddy-face, .game-progress-fill::after {
     animation: none !important;
   }
 }

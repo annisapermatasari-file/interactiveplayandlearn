@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { ActivityRenderer } from "@/components/activities/ActivityRenderer";
 import { LearningBuddy } from "@/components/learning/LearningBuddy";
+import { GameHud } from "@/components/learning/GameHud";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { submitAnswer } from "@/server/actions/learning";
@@ -25,6 +26,7 @@ export function LessonPlayer({
   const [index, setIndex] = useState(0);
   const [answerState, setAnswerState] = useState<ActivityAnswerState>({ status: "unanswered" });
   const [results, setResults] = useState<boolean[]>([]);
+  const [streak, setStreak] = useState(0);
   // XP actually credited by the server this playthrough (0 if a question
   // was already answered correctly before — XP only pays out once per
   // question ever, see submitAnswer), and any badges newly awarded.
@@ -112,6 +114,7 @@ export function LessonPlayer({
         correctOptionId: result.correctOptionId,
       });
       setResults((prev) => [...prev, result.isCorrect]);
+      setStreak((prev) => (result.isCorrect ? prev + 1 : 0));
       setXpEarned((prev) => prev + result.xpAwarded);
       if (result.newBadges.length > 0) {
         setEarnedBadges((prev) => [...prev, ...result.newBadges]);
@@ -147,17 +150,24 @@ export function LessonPlayer({
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="game-board flex flex-col gap-6">
       <LearningBuddy state={buddyState} />
+      <GameHud
+        level={index + 1}
+        totalQuestions={questions.length}
+        correctCount={results.filter(Boolean).length}
+        streak={streak}
+        wrongCount={results.filter((result) => !result).length}
+      />
       <div className="flex items-center justify-between text-sm text-muted">
         <span>{lessonTitle}</span>
         <span>
           Soal {index + 1} dari {questions.length}
         </span>
       </div>
-      <div className="h-3 w-full overflow-hidden rounded-full bg-border">
+      <div className="game-progress-track h-4 w-full overflow-hidden rounded-full bg-border">
         <div
-          className="h-full rounded-full bg-primary transition-[width] duration-500 ease-[var(--ease-in-out)]"
+          className="game-progress-fill h-full rounded-full bg-primary transition-[width] duration-500 ease-[var(--ease-in-out)]"
           style={{ width: `${(index / questions.length) * 100}%` }}
         />
       </div>
