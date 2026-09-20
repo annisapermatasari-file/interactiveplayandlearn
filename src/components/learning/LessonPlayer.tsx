@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/Card";
 import { submitAnswer } from "@/server/actions/learning";
 import { calculateScorePercent, calculateStars } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
+import { speakBuddy as speakBuddyVoice } from "@/lib/buddyVoice";
 import type { ActivityAnswerState, ChildSafeQuestion } from "@/types/learning";
 
 export function LessonPlayer({
@@ -152,17 +153,12 @@ export function LessonPlayer({
   }
 
   function speakBuddy() {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
     const message = buddyState === "correct"
       ? "Hebat! Jawabanmu benar!"
       : buddyState === "wrong"
         ? "Tidak apa-apa. Kita coba soal berikutnya bersama-sama."
         : "Ayo pilih jawabanmu. Aku menemanimu!";
-    const utterance = new SpeechSynthesisUtterance(message);
-    utterance.lang = "id-ID";
-    utterance.rate = 0.9;
-    window.speechSynthesis.speak(utterance);
+    speakBuddyVoice(message);
   }
 
   return (
