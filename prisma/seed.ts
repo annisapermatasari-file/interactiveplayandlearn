@@ -95,6 +95,22 @@ function matchAmountQuestion(
   };
 }
 
+/** Missing-number sequence styled for the worksheet-inspired ordering lesson. */
+function sequenceQuestion(seedIndex: number, missing: number, sequence: number[], skill: Skill) {
+  const { options, correctOptionId } = buildOptions(
+    String(missing),
+    distractors(missing, Math.max(...sequence) + 2).map(String),
+    seedIndex,
+  );
+  return {
+    skill,
+    prompt: `URUTAN:${sequence.map((value) => (value === missing ? "_" : value)).join(",")}` +
+      "\nLengkapi angka yang hilang!",
+    options,
+    correctAnswer: { optionId: correctOptionId },
+  };
+}
+
 type LessonDef = {
   title: string;
   description: string;
@@ -104,6 +120,7 @@ type LessonDef = {
   emoji2?: string;
   max: number;
   counts: number[];
+  sequence?: boolean;
 };
 
 const moduleDefs: { title: string; lessons: LessonDef[] }[] = [
@@ -246,6 +263,16 @@ const moduleDefs: { title: string; lessons: LessonDef[] }[] = [
         emoji: "🍭",
         max: 10,
         counts: [2, 3, 5, 7, 8],
+      },
+      {
+        title: "Urutan Angka Seru",
+        description: "Melengkapi angka yang hilang dalam urutan sederhana.",
+        activityType: "COUNT_SELECT",
+        skill: "COUNT_1_10",
+        emoji: "🚂",
+        max: 10,
+        counts: [2, 5, 8, 4, 7],
+        sequence: true,
       },
     ],
   },
@@ -432,8 +459,14 @@ async function main() {
 
       for (let q = 0; q < lessonDef.counts.length; q++) {
         const count = lessonDef.counts[q];
-        const spec =
-          lessonDef.activityType === "NUMBER_RECOGNITION"
+        const spec = lessonDef.sequence
+          ? sequenceQuestion(
+              globalQuestionIndex,
+              count,
+              [count - 1, count, count + 1, count + 2].map((value) => (value > 10 ? value - 4 : value)),
+              lessonDef.skill,
+            )
+          : lessonDef.activityType === "NUMBER_RECOGNITION"
             ? numberRecognitionQuestion(globalQuestionIndex, lessonDef.emoji, count, lessonDef.max, lessonDef.skill)
             : lessonDef.activityType === "MULTIPLE_CHOICE"
               ? matchAmountQuestion(

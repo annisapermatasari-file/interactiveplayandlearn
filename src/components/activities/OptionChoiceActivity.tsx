@@ -19,11 +19,40 @@ export function OptionChoiceActivity({ question, answerState, onSelect, disabled
   const options = (question.options as ChildSafeOption[] | null) ?? [];
   const answered = answerState.status === "answered";
   const locked = answered || Boolean(disabled);
+  const promptLines = question.prompt.split("\n");
+  const visualText = promptLines.length > 1 ? promptLines[0] : null;
+  const instruction = promptLines.length > 1 ? promptLines.slice(1).join("\n") : question.prompt;
+  const sequenceValues = visualText?.startsWith("URUTAN:")
+    ? visualText.slice("URUTAN:".length).split(",")
+    : null;
 
   return (
     <div className="flex flex-col items-center gap-8">
-      <p className="whitespace-pre-line text-center text-3xl font-semibold leading-relaxed">
-        {question.prompt}
+      {question.imageUrl || visualText ? (
+        <div className="question-visual flex min-h-36 w-full items-center justify-center rounded-3xl border-2 border-accent/60 bg-accent/10 p-5 text-center">
+          {sequenceValues ? (
+            <div className="sequence-track" aria-label="Urutan angka">
+              {sequenceValues.map((value, index) => (
+                <span
+                  key={`${value}-${index}`}
+                  className={cn("sequence-number", value === "_" && "sequence-number-missing")}
+                >
+                  {value === "_" ? "?" : value}
+                </span>
+              ))}
+            </div>
+          ) : question.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={question.imageUrl} alt="Ilustrasi soal" className="max-h-44 rounded-2xl object-contain" />
+          ) : (
+            <span className="question-emoji text-6xl leading-none" aria-hidden>
+              {visualText}
+            </span>
+          )}
+        </div>
+      ) : null}
+      <p className="whitespace-pre-line text-center text-2xl font-semibold leading-relaxed sm:text-3xl">
+        {instruction}
       </p>
       <div className="grid w-full grid-cols-2 gap-4 sm:grid-cols-4">
         {options.map((option, i) => {

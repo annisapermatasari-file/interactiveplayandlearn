@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { ActivityRenderer } from "@/components/activities/ActivityRenderer";
+import { LearningBuddy } from "@/components/learning/LearningBuddy";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { submitAnswer } from "@/server/actions/learning";
@@ -29,6 +30,7 @@ export function LessonPlayer({
   // question ever, see submitAnswer), and any badges newly awarded.
   const [xpEarned, setXpEarned] = useState(0);
   const [earnedBadges, setEarnedBadges] = useState<{ code: string; name: string }[]>([]);
+  const [buddyState, setBuddyState] = useState<"ready" | "thinking" | "correct" | "wrong" | "finished">("ready");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -52,7 +54,9 @@ export function LessonPlayer({
     const stars = calculateStars(scorePercent);
 
     return (
-      <Card className="flex flex-col items-center gap-4 rounded-3xl py-10 text-center">
+      <div className="flex flex-col gap-4">
+        <LearningBuddy state="finished" />
+        <Card className="flex flex-col items-center gap-4 rounded-3xl py-10 text-center">
         <h2 className="text-2xl font-semibold">Pelajaran Selesai! 🎉</h2>
         <p className="celebrate text-5xl" aria-label={`${stars} dari 3 bintang`}>
           {"⭐".repeat(stars)}
@@ -73,7 +77,8 @@ export function LessonPlayer({
         <Link href={backHref} className={buttonClasses({ className: "mt-2" })}>
           Kembali ke Pelajaran
         </Link>
-      </Card>
+        </Card>
+      </div>
     );
   }
 
@@ -86,6 +91,7 @@ export function LessonPlayer({
     // double-click could fire two submitAnswer calls for the same question.
     if (answerState.status !== "unanswered" || isPending) return;
     setError(null);
+    setBuddyState("thinking");
     startTransition(async () => {
       const result = await submitAnswer({
         lessonId,
@@ -93,9 +99,12 @@ export function LessonPlayer({
         selectedOptionId: optionId,
       });
       if (!result.ok) {
+        setBuddyState("ready");
         setError(result.error);
         return;
       }
+      playFeedbackTone(result.isCorrect);
+      setBuddyState(result.isCorrect ? "correct" : "wrong");
       setAnswerState({
         status: "answered",
         selectedOptionId: optionId,
@@ -112,11 +121,34 @@ export function LessonPlayer({
 
   function handleNext() {
     setAnswerState({ status: "unanswered" });
+    setBuddyState("ready");
     setIndex((current) => current + 1);
+  }
+
+  function playFeedbackTone(isCorrect: boolean) {
+    if (typeof window === "undefined") return;
+    const AudioContextClass = window.AudioContext ||
+      (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const context = new AudioContextClass();
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(isCorrect ? 660 : 220, context.currentTime);
+    oscillator.frequency.linearRampToValueAtTime(isCorrect ? 880 : 180, context.currentTime + 0.16);
+    gain.gain.setValueAtTime(0.0001, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.14, context.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.22);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start();
+    oscillator.stop(context.currentTime + 0.24);
+    oscillator.addEventListener("ended", () => void context.close(), { once: true });
   }
 
   return (
     <div className="flex flex-col gap-6">
+      <LearningBuddy state={buddyState} />
       <div className="flex items-center justify-between text-sm text-muted">
         <span>{lessonTitle}</span>
         <span>
